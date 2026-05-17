@@ -1,5 +1,40 @@
 const BASE = "https://function-bun-production-b22d.up.railway.app";
 
+const PENDING_KEY = "betmali_pending_payment";
+const MAX_AGE_MS = 10 * 60 * 1000;
+
+export interface PendingPayment {
+  internal_reference: string;
+  amount: number;
+  method: string;
+  msisdn: string;
+  type: "deposit" | "withdraw";
+  initiatedAt: number;
+  userId: string;
+}
+
+export function savePendingPayment(p: PendingPayment): void {
+  localStorage.setItem(PENDING_KEY, JSON.stringify(p));
+}
+
+export function clearPendingPayment(): void {
+  localStorage.removeItem(PENDING_KEY);
+}
+
+export function getPendingPayment(userId: string): PendingPayment | null {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as PendingPayment;
+    if (p.userId !== userId) return null;
+    if (Date.now() - p.initiatedAt > MAX_AGE_MS) { clearPendingPayment(); return null; }
+    return p;
+  } catch {
+    clearPendingPayment();
+    return null;
+  }
+}
+
 export function normalizeMsisdn(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   if (digits.startsWith("256")) return `+${digits}`;

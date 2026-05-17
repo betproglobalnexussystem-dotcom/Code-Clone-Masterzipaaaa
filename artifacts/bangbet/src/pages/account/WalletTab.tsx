@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { CreditCard, Wallet, Gift, Users, Copy, CheckCircle, AlertCircle, X, ChevronRight, Smartphone, Star, Loader2, Clock } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { apiDeposit, apiWithdraw, apiRequestStatus, normalizeMsisdn, parseRequestStatus } from "../../lib/paymentApi";
+import { apiDeposit, apiWithdraw, apiRequestStatus, normalizeMsisdn, parseRequestStatus, savePendingPayment, clearPendingPayment } from "../../lib/paymentApi";
 
 function Modal({ title, accent, onClose, children }: { title: React.ReactNode; accent: string; onClose: () => void; children: React.ReactNode }) {
   return (
@@ -88,17 +88,29 @@ function DepositModal({ onClose }: { onClose: () => void }) {
 
     const ref = data.internal_reference;
 
+    savePendingPayment({
+      internal_reference: ref,
+      amount: amt,
+      method,
+      msisdn,
+      type: "deposit",
+      initiatedAt: Date.now(),
+      userId: user!.uid,
+    });
+
     pollRef.current = setInterval(async () => {
       try {
         const status = await apiRequestStatus(ref);
         const s = parseRequestStatus(status);
         if (s === "success") {
           stopPolling();
+          clearPendingPayment();
           await creditBalance(amt, `Deposit via ${method} (${msisdn})`);
           setStage("success");
           setTimeout(onClose, 2000);
         } else if (s === "failed" || s === "error" || s === "cancelled") {
           stopPolling();
+          clearPendingPayment();
           setStage("failed");
           setError(status?.message || "Payment was not completed. Please try again.");
         }
@@ -233,17 +245,29 @@ function WithdrawModal({ onClose }: { onClose: () => void }) {
 
     const ref = data.internal_reference;
 
+    savePendingPayment({
+      internal_reference: ref,
+      amount: amt,
+      method,
+      msisdn,
+      type: "withdraw",
+      initiatedAt: Date.now(),
+      userId: user!.uid,
+    });
+
     pollRef.current = setInterval(async () => {
       try {
         const status = await apiRequestStatus(ref);
         const s = parseRequestStatus(status);
         if (s === "success") {
           stopPolling();
+          clearPendingPayment();
           await debitBalance(amt, `Withdrawal to ${method} (${msisdn})`);
           setStage("success");
           setTimeout(onClose, 2000);
         } else if (s === "failed" || s === "error" || s === "cancelled") {
           stopPolling();
+          clearPendingPayment();
           setStage("failed");
           setError(status?.message || "Withdrawal was not completed. Please try again.");
         }
