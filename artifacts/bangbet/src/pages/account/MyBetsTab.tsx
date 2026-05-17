@@ -154,19 +154,25 @@ function TicketModal({ ticket, onClose, onCashout }: { ticket: Ticket; onClose: 
   useEffect(() => {
     if (ticket.status !== "pending") return;
     tickCountRef.current = 0;
-    const id = setInterval(() => {
-      tickCountRef.current += 1;
-      const next = estimateLiveCashout(ticketRef.current, tickCountRef.current);
-      setLiveCashout(prev => {
-        if (next !== prev) {
-          setPrevCashout(prev);
-          setPulse(true);
-          setTimeout(() => setPulse(false), 600);
-        }
-        return next;
-      });
-    }, 1000);
-    return () => clearInterval(id);
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      const delay = 3000 + Math.random() * 2000;
+      timeoutId = setTimeout(() => {
+        tickCountRef.current += 1;
+        const next = estimateLiveCashout(ticketRef.current, tickCountRef.current);
+        setLiveCashout(prev => {
+          if (next !== prev) {
+            setPrevCashout(prev);
+            setPulse(true);
+            setTimeout(() => setPulse(false), 600);
+          }
+          return next;
+        });
+        schedule();
+      }, delay);
+    };
+    schedule();
+    return () => clearTimeout(timeoutId);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
