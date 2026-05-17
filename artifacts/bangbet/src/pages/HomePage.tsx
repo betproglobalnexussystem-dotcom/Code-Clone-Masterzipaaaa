@@ -116,35 +116,6 @@ function apiBoostedToMatch(m: ApiMatch): Match | null {
   };
 }
 
-const BANNERS = [
-  {
-    tag: "WELCOME BONUS",
-    title: ["100%", "DEPOSIT BONUS"],
-    subtitle: "Up to UGX 370,000 on your first deposit",
-    bg: "linear-gradient(135deg, #1a6e3d 0%, #2DA962 100%)",
-    bgImage: "https://www.bangbet.com/static/img/img_Popup_news1.5086daf.png",
-    icon: Gift,
-    btnText: "CLAIM NOW",
-  },
-  {
-    tag: "FREE BET",
-    title: ["UGX 7,400", "FREE BET"],
-    subtitle: "Register and verify your account today",
-    bg: "linear-gradient(135deg, #1a237e 0%, #3949ab 100%)",
-    bgImage: null,
-    icon: Zap,
-    btnText: "GET FREE BET",
-  },
-  {
-    tag: "MEGA JACKPOT",
-    title: ["WIN UGX", "37,000,000"],
-    subtitle: "Predict 13 games correctly to win",
-    bg: "linear-gradient(135deg, #b71c1c 0%, #e53935 100%)",
-    bgImage: null,
-    icon: Trophy,
-    btnText: "PLAY NOW",
-  },
-];
 
 const QUICK_NAV = [
   { iconUrl: "https://www.svgrepo.com/show/404149/soccer-ball.svg", label: "Football" },
@@ -207,14 +178,14 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
     return unsub;
   }, []);
 
-  const activeBanners = firestoreBanners.length > 0 ? firestoreBanners : null;
-  const bannerCount = activeBanners ? activeBanners.length : BANNERS.length;
+  const bannerCount = firestoreBanners.length;
 
   useEffect(() => {
     setActiveBanner(0);
   }, [firestoreBanners.length]);
 
   useEffect(() => {
+    if (bannerCount < 2) return;
     const timer = setInterval(() => setActiveBanner((prev) => (prev + 1) % bannerCount), 6000);
     return () => clearInterval(timer);
   }, [bannerCount]);
@@ -308,9 +279,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
     return () => clearInterval(id);
   }, []);
 
-  const staticBanner = BANNERS[Math.min(activeBanner, BANNERS.length - 1)];
-  const BannerIcon = staticBanner.icon;
-  const fsBanner = activeBanners ? activeBanners[Math.min(activeBanner, activeBanners.length - 1)] : null;
+  const fsBanner = firestoreBanners.length > 0 ? firestoreBanners[Math.min(activeBanner, firestoreBanners.length - 1)] : null;
 
   const filteredUpcoming = activeLeague === "All"
     ? upcomingMatches
@@ -346,36 +315,19 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
             <div style={{ width: 110, height: 110, flexShrink: 0, zIndex: 2 }} />
           </div>
         ) : (
-          <div className="banner-slide" style={staticBanner.bgImage ? {
-            backgroundImage: `url(${staticBanner.bgImage})`, backgroundSize: "cover", backgroundPosition: "center right",
-          } : { background: staticBanner.bg }}>
-            {staticBanner.bgImage && (
-              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(26,110,61,0.97) 0%, rgba(26,110,61,0.88) 45%, rgba(26,110,61,0.25) 70%, transparent 100%)", zIndex: 1 }} />
-            )}
-            {!staticBanner.bgImage && (
-              <>
-                <div className="banner-circle" style={{ width: 200, height: 200, top: -70, right: -50 }} />
-                <div className="banner-circle" style={{ width: 120, height: 120, bottom: -40, left: 10 }} />
-              </>
-            )}
-            <div className="banner-content" style={{ zIndex: 2 }}>
-              <div className="banner-tag">{staticBanner.tag}</div>
-              <div className="banner-title"><span className="highlight">{staticBanner.title[0]}</span> {staticBanner.title[1]}</div>
-              <div className="banner-subtitle">{staticBanner.subtitle}</div>
-              <div className="banner-btn" onClick={onOpenLogin}><Zap size={13} />{staticBanner.btnText}</div>
+          <div className="banner-slide" style={{ background: "linear-gradient(135deg, #1a6e3d 0%, #2DA962 100%)", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 32, height: 32, border: "3px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
             </div>
-            {staticBanner.bgImage ? (
-              <div style={{ width: 110, height: 110, flexShrink: 0, zIndex: 2 }} />
-            ) : (
-              <div className="banner-visual"><BannerIcon size={50} strokeWidth={1.5} /></div>
-            )}
           </div>
         )}
-        <div className="banner-dots">
-          {Array.from({ length: bannerCount }).map((_, i) => (
-            <div key={i} className={`banner-dot ${activeBanner === i ? "active" : ""}`} onClick={() => setActiveBanner(i)} />
-          ))}
-        </div>
+        {bannerCount > 1 && (
+          <div className="banner-dots">
+            {firestoreBanners.map((_, i) => (
+              <div key={i} className={`banner-dot ${activeBanner === i ? "active" : ""}`} onClick={() => setActiveBanner(i)} />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="quick-nav">
