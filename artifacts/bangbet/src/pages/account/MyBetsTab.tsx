@@ -82,19 +82,23 @@ function estimateSelectionOdds(sel: BetSelection): number {
   return Math.max(1.01, 1 / Math.max(0.01, winProb));
 }
 
-function estimateLiveCashout(ticket: Ticket): number {
+function estimateLiveCashout(ticket: Ticket, tick = 0): number {
   if (ticket.status !== "pending") return 0;
   let ratio = 1;
+  let hasLive = false;
   for (const sel of ticket.selections) {
     if (sel.status === "lost") return 0;
     if (sel.status === "won") continue;
     const currentOdd = estimateSelectionOdds(sel);
     ratio *= currentOdd / sel.odd;
+    if (isMatchLive(sel.time)) hasLive = true;
   }
   const raw = ticket.stake * ratio * 0.85;
+  const flutter = hasLive ? (Math.sin(tick * 0.71) * 0.035 + Math.cos(tick * 1.37) * 0.025) : 0;
+  const adjusted = raw * (1 + flutter);
   const floor = ticket.stake * 0.02;
   const ceiling = ticket.potentialWin * 0.95;
-  return Math.round(Math.min(Math.max(raw, floor), ceiling));
+  return Math.round(Math.min(Math.max(adjusted, floor), ceiling));
 }
 
 function hasAnyLiveSelection(ticket: Ticket): boolean {
@@ -137,16 +141,22 @@ function BarcodeCanvas({ value }: { value: string }) {
 
 function TicketModal({ ticket, onClose, onCashout }: { ticket: Ticket; onClose: () => void; onCashout: (t: Ticket, amount: number) => Promise<void> }) {
   const [cashingOut, setCashingOut] = useState(false);
-  const [liveCashout, setLiveCashout] = useState(() => estimateLiveCashout(ticket));
+  const [liveCashout, setLiveCashout] = useState(() => estimateLiveCashout(ticket, 0));
   const [prevCashout, setPrevCashout] = useState(liveCashout);
   const [pulse, setPulse] = useState(false);
+  const ticketRef = useRef(ticket);
+  const tickCountRef = useRef(0);
+
+  useEffect(() => { ticketRef.current = ticket; }, [ticket]);
 
   const statusBg = ticket.status === "won" ? "linear-gradient(135deg,#1a8a4c,#2DA962)" : ticket.status === "lost" ? "linear-gradient(135deg,#b71c1c,#e53935)" : "linear-gradient(135deg,#e65100,#fb8c00)";
 
   useEffect(() => {
     if (ticket.status !== "pending") return;
-    const tick = () => {
-      const next = estimateLiveCashout(ticket);
+    tickCountRef.current = 0;
+    const id = setInterval(() => {
+      tickCountRef.current += 1;
+      const next = estimateLiveCashout(ticketRef.current, tickCountRef.current);
       setLiveCashout(prev => {
         if (next !== prev) {
           setPrevCashout(prev);
@@ -155,11 +165,10 @@ function TicketModal({ ticket, onClose, onCashout }: { ticket: Ticket; onClose: 
         }
         return next;
       });
-    };
-    tick();
-    const id = setInterval(tick, 1000);
+    }, 1000);
     return () => clearInterval(id);
-  }, [ticket]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const isLive = hasAnyLiveSelection(ticket);
   const cashoutAmount = liveCashout > 0 ? liveCashout : (ticket.cashout ?? 0);
