@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "BangBet - Sports Betting"
+version = "1.0.0"
+id = "artifacts/bangbet"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25562
+
+[services.development]
+run = "pnpm --filter @workspace/bangbet run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/bangbet", "run", "build" ]
+publicDir = "artifacts/bangbet/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25562"
+BASE_PATH = "/"

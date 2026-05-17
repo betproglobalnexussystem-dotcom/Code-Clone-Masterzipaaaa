@@ -1,0 +1,578 @@
+Complete Provably-Fair Slot Game Specification
+
+This is a production-style specification you can give directly to an AI coding system to generate:
+
+backend
+game math
+RTP engine
+provably fair logic
+paylines
+database
+wallet system
+APIs
+
+for a real multi-line slot game.
+
+1. GAME SPECIFICATION
+Game Type
+5 Reel Video Slot
+3 Rows
+25 Paylines
+Wild Symbol
+Scatter Symbol
+Free Spins
+Multipliers
+Provably Fair RNG
+RTP Target = 96%
+Medium Volatility
+2. REEL STRUCTURE
+
+Each reel has:
+
+virtual reel strip
+64 positions per reel
+
+Visible:
+
+3 symbols per reel
+
+Total visible grid:
+
+5 x 3
+3. SYMBOLS
+Symbol	Type	Payout Strength
+A	Premium	Highest
+K	Premium	High
+Q	Medium	Medium
+J	Medium	Medium
+10	Low	Low
+9	Low	Low
+WILD	Substitute	Special
+SCATTER	Bonus	Special
+4. PAYTABLE
+
+Payouts are multiplier of line bet.
+
+Symbol	3 Match	4 Match	5 Match
+A	5x	20x	100x
+K	4x	15x	80x
+Q	3x	10x	50x
+J	2x	8x	40x
+10	1x	5x	20x
+9	1x	4x	15x
+
+Wild substitutes all except Scatter.
+
+Scatter:
+
+3 = 10 Free Spins
+4 = 20 Free Spins
+5 = 50 Free Spins
+5. REEL STRIPS
+Reel 1
+[
+"A","K","Q","J","10","9","A","Q","K","10",
+"J","9","A","K","Q","10","9","J","A","K",
+"Q","10","9","A","WILD","K","Q","J","10","9",
+"A","K","Q","SCATTER","10","9","A","K","Q","J",
+"10","9","A","K","Q","J","10","9","A","K",
+"Q","J","10","9","A","K","Q","J","10","9",
+"A","K","Q","J"
+]
+
+Repeat similar strips for reels 2–5 but vary distribution slightly.
+
+6. PAYLINES
+
+25 paylines.
+
+Example:
+
+const paylines = [
+  [1,1,1,1,1],
+  [0,0,0,0,0],
+  [2,2,2,2,2],
+  [0,1,2,1,0],
+  [2,1,0,1,2],
+  [0,0,1,0,0],
+  [2,2,1,2,2],
+  [1,0,0,0,1],
+  [1,2,2,2,1],
+  [0,1,1,1,0],
+  [2,1,1,1,2],
+  [1,0,1,0,1],
+  [1,2,1,2,1],
+  [0,1,0,1,0],
+  [2,1,2,1,2],
+  [0,2,0,2,0],
+  [2,0,2,0,2],
+  [1,1,0,1,1],
+  [1,1,2,1,1],
+  [0,1,2,2,2],
+  [2,1,0,0,0],
+  [0,0,1,2,2],
+  [2,2,1,0,0],
+  [1,0,2,0,1],
+  [1,2,0,2,1]
+]
+
+Rows:
+
+0 = top
+1 = middle
+2 = bottom
+7. RTP FORMULA
+
+Target RTP:
+
+RTP=
+Total Bets
+Total Expected Return
+	​
+
+×100
+
+Target:
+
+96%
+
+House edge:
+
+4%
+8. PROBABILITY ENGINE
+Probability of Symbol
+
+If Reel 1 has:
+
+64 positions
+8 A symbols
+
+Then:
+
+P(A)=
+64
+8
+	​
+
+
+Probability of 5 A:
+
+P(5A)=P(A
+1
+	​
+
+)P(A
+2
+	​
+
+)P(A
+3
+	​
+
+)P(A
+4
+	​
+
+)P(A
+5
+	​
+
+)
+
+9. EXPECTED VALUE CALCULATION
+
+Each payout contributes to RTP.
+
+Formula:
+
+EV=∑(Payout
+i
+	​
+
+×Probability
+i
+	​
+
+)
+
+Example:
+
+5A probability = 0.00005
+payout = 100x
+contribution = 0.005
+
+Sum ALL outcomes:
+
+0.96
+
+Meaning:
+
+96% RTP
+10. VOLATILITY MODEL
+
+Medium volatility design:
+
+Feature	Value
+Hit Frequency	28%
+Big Win Frequency	0.5%
+Max Win	5000x
+Bonus Frequency	1 in 120 spins
+11. PROVABLY FAIR SYSTEM
+Server Seed
+
+Secret random string.
+
+Example:
+
+f83kdk29dkd92jd82j
+Client Seed
+
+Chosen by player.
+
+Example:
+
+player123
+Nonce
+
+Spin counter.
+
+Example:
+
+1542
+12. PROVABLY FAIR HASH
+
+Server stores:
+
+SHA256(serverSeed)
+
+Before gameplay.
+
+Player sees only hash.
+
+After seed rotation:
+
+reveal original seed
+player verifies fairness
+13. RNG ALGORITHM
+
+Use HMAC-SHA256.
+
+Example:
+
+const crypto = require("crypto");
+
+function provablyFairRandom(serverSeed, clientSeed, nonce) {
+  const message = `${clientSeed}:${nonce}`;
+
+  const hash = crypto
+    .createHmac("sha256", serverSeed)
+    .update(message)
+    .digest("hex");
+
+  return parseInt(hash.substring(0, 8), 16) / 0xffffffff;
+}
+14. REEL STOP GENERATION
+function getReelPosition(rand, reelLength) {
+  return Math.floor(rand * reelLength);
+}
+
+For each reel:
+
+const stop = getReelPosition(randomValue, 64);
+15. BUILD VISIBLE GRID
+function getVisibleSymbols(reel, stop) {
+  return [
+    reel[(stop - 1 + reel.length) % reel.length],
+    reel[stop],
+    reel[(stop + 1) % reel.length]
+  ];
+}
+16. COMPLETE SPIN FLOW
+Player clicks spin
+↓
+Validate balance
+↓
+Deduct bet
+↓
+Generate provably fair randoms
+↓
+Determine reel stops
+↓
+Build symbol grid
+↓
+Evaluate paylines
+↓
+Evaluate scatters
+↓
+Calculate multipliers
+↓
+Calculate total win
+↓
+Update wallet
+↓
+Store spin
+↓
+Return response
+17. PAYLINE EVALUATION
+
+Example logic:
+
+function evaluateLine(grid, payline) {
+  const symbols = [];
+
+  for (let reel = 0; reel < 5; reel++) {
+    symbols.push(grid[reel][payline[reel]]);
+  }
+
+  return symbols;
+}
+18. MATCH DETECTION
+function countMatches(symbols) {
+  let base = symbols[0];
+  let count = 1;
+
+  for (let i = 1; i < symbols.length; i++) {
+    if (symbols[i] === base || symbols[i] === "WILD") {
+      count++;
+    } else {
+      break;
+    }
+  }
+
+  return { symbol: base, count };
+}
+19. WIN CALCULATION
+function calculateLineWin(symbol, count, lineBet) {
+  const payout = paytable[symbol]?.[count] || 0;
+  return payout * lineBet;
+}
+20. SCATTER LOGIC
+function countScatters(grid) {
+  let total = 0;
+
+  for (const reel of grid) {
+    for (const symbol of reel) {
+      if (symbol === "SCATTER") total++;
+    }
+  }
+
+  return total;
+}
+21. FREE SPIN SYSTEM
+if (scatters >= 3) {
+   freeSpins += 10;
+}
+
+Free spins:
+
+same RTP engine
+optional multiplier
+
+Example:
+
+2x during bonus
+22. MULTIPLIERS
+
+Multiplier formula:
+
+Total Win=Base Win×Multiplier
+
+Example:
+
+base win = 50
+multiplier = 3x
+final = 150
+23. LOSING SPINS
+
+A losing spin:
+
+totalWin = 0
+
+Probability depends on:
+
+reel strips
+paylines
+symbol density
+
+Example:
+
+72% losing spins
+24. HIT FREQUENCY
+
+Formula:
+
+Hit Frequency=
+Total Spins
+Winning Spins
+	​
+
+
+Example:
+
+28%
+25. DATABASE DESIGN
+users
+CREATE TABLE users (
+  id UUID PRIMARY KEY,
+  balance DECIMAL(18,2),
+  created_at TIMESTAMP
+);
+spins
+CREATE TABLE spins (
+  id UUID PRIMARY KEY,
+  user_id UUID,
+  bet DECIMAL(18,2),
+  win DECIMAL(18,2),
+  reels JSONB,
+  paylines JSONB,
+  server_seed TEXT,
+  client_seed TEXT,
+  nonce INT,
+  created_at TIMESTAMP
+);
+transactions
+CREATE TABLE transactions (
+  id UUID PRIMARY KEY,
+  user_id UUID,
+  type TEXT,
+  amount DECIMAL(18,2),
+  balance_before DECIMAL(18,2),
+  balance_after DECIMAL(18,2),
+  created_at TIMESTAMP
+);
+26. API DESIGN
+POST /spin
+
+Request:
+
+{
+  "bet": 1.00,
+  "lines": 25,
+  "clientSeed": "player123"
+}
+
+Response:
+
+{
+  "grid": [],
+  "wins": [],
+  "totalWin": 12.5,
+  "balance": 240.5,
+  "freeSpins": 10,
+  "nonce": 1543
+}
+27. RTP SIMULATION SCRIPT
+let totalBet = 0;
+let totalWin = 0;
+
+for (let i = 0; i < 10000000; i++) {
+   const result = spin();
+   totalBet += result.bet;
+   totalWin += result.win;
+}
+
+console.log(totalWin / totalBet);
+
+Expected:
+
+0.96
+28. ANTI-FRAUD RULES
+
+NEVER:
+
+trust frontend reels
+calculate wins client-side
+expose server seed
+allow duplicate spin requests
+
+Always:
+
+lock wallet transaction
+use DB transactions
+sign requests
+log all spins
+29. WALLET SAFETY
+
+Use:
+
+SELECT FOR UPDATE
+
+to prevent double spending.
+
+30. SECURITY REQUIREMENTS
+
+Use:
+
+HTTPS
+JWT auth
+encrypted secrets
+rate limiting
+Redis locks
+audit logs
+31. RECOMMENDED STACK
+
+Frontend:
+
+Phaser
+PixiJS
+
+Backend:
+
+Node.js
+NestJS
+
+Database:
+
+PostgreSQL
+Redis
+32. GAME LOOP SUMMARY
+BET
+↓
+RNG
+↓
+REEL STOPS
+↓
+VISIBLE GRID
+↓
+PAYLINE CHECK
+↓
+SCATTER CHECK
+↓
+MULTIPLIERS
+↓
+TOTAL WIN
+↓
+UPDATE WALLET
+↓
+STORE SPIN
+↓
+RETURN RESULT
+33. IMPORTANT RTP NOTES
+
+RTP is NOT:
+
+per spin
+
+RTP is:
+
+long-term statistical expectation
+
+A player may:
+
+win huge
+lose everything
+hit jackpot early
+
+Variance controls short-term behavior.
+
+34. FINAL PRODUCTION REQUIREMENTS
+
+Before launch:
+
+simulate 100M spins
+verify RTP
+verify volatility
+penetration testing
+load testing
+RNG audit
+certify fairness
