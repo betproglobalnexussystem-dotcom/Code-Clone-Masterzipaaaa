@@ -140,6 +140,7 @@ interface HomePageProps {
 export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatchClick, onNavigate }: HomePageProps) {
   const [activeBanner, setActiveBanner] = useState(0);
   const [firestoreBanners, setFirestoreBanners] = useState<FirestoreBanner[]>([]);
+  const [bannersLoaded, setBannersLoaded] = useState(false);
   const [jackpot, setJackpot] = useState(37_000_000);
   const [jackpotSub, setJackpotSub] = useState("Predict 13 games · Closes in 2h 34m");
   const [noticeText, setNoticeText] = useState("Welcome Bonus: 100% up to UGX 370,000 on your first deposit! \u00a0\u00a0\u00a0 Jackpot of UGX 37,000,000 this weekend! \u00a0\u00a0\u00a0 Withdraw via Mobile Money in under 5 minutes!");
@@ -156,7 +157,8 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
     const q = query(collection(db, "carousel"), where("active", "==", true), orderBy("order", "asc"));
     const unsub = onSnapshot(q, (snap) => {
       setFirestoreBanners(snap.docs.map(d => ({ id: d.id, ...d.data() } as FirestoreBanner)));
-    }, () => {});
+      setBannersLoaded(true);
+    }, () => { setBannersLoaded(true); });
     return unsub;
   }, []);
 
@@ -311,6 +313,15 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
               <div className="banner-tag">PROMOTION</div>
               <div className="banner-title"><span className="highlight">{fsBanner.title}</span></div>
               <div className="banner-btn" onClick={e => { e.stopPropagation(); onOpenLogin(); }}><Zap size={13} />PLAY NOW</div>
+            </div>
+            <div style={{ width: 110, height: 110, flexShrink: 0, zIndex: 2 }} />
+          </div>
+        ) : bannersLoaded ? (
+          <div className="banner-slide" style={{ background: "linear-gradient(135deg, #1a6e3d 0%, #2DA962 100%)", position: "relative" }}>
+            <div className="banner-content" style={{ zIndex: 2 }}>
+              <div className="banner-tag">WELCOME</div>
+              <div className="banner-title"><span className="highlight">Win Big with BetMali</span></div>
+              <div className="banner-btn" onClick={onOpenLogin}><Zap size={13} />GET STARTED</div>
             </div>
             <div style={{ width: 110, height: 110, flexShrink: 0, zIndex: 2 }} />
           </div>
