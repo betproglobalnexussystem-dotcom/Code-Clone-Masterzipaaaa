@@ -17,6 +17,7 @@ export interface Match {
   overUnder?: string;
   leagueId?: number;
   isBoosted?: boolean;
+  sport?: string;
 }
 
 interface MatchCardProps {
@@ -65,7 +66,16 @@ export default function MatchCard({ match, onAddBet, betSelections, onMatchClick
   const handleOdd = (e: React.MouseEvent, label: string, odd: number, key: string) => {
     e.stopPropagation();
     if (odd <= 1) return;
-    onAddBet({ id: `${match.id}-${key}`, match: `${match.homeTeam} vs ${match.awayTeam}`, pick: label, odd });
+    onAddBet({
+      id: `${match.id}-${key}`,
+      match: `${match.homeTeam} vs ${match.awayTeam}`,
+      pick: label,
+      odd,
+      matchId: match.apiId,
+      kickOffTime: match.kickOffTime,
+      sport: match.sport,
+      marketKey: key,
+    });
   };
 
   const oddsArr = [

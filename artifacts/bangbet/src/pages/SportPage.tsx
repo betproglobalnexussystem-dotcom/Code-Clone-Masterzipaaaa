@@ -67,6 +67,7 @@ function apiMatchToMatch(m: ApiMatch): Match | null {
       isLive: m.live === true && m.kickOffTime < Date.now(),
       odds: { home: entries[0] ?? 0, draw: entries[Math.floor(entries.length / 2)] ?? 0, away: entries[entries.length - 1] ?? 0 },
       oddsCount: m.oddsCount, kickOffTime: m.kickOffTime,
+      sport: m.sport,
     };
   }
   return {
@@ -76,6 +77,7 @@ function apiMatchToMatch(m: ApiMatch): Match | null {
     isLive: m.live === true && m.kickOffTime < Date.now(),
     odds, oddsCount: m.oddsCount, kickOffTime: m.kickOffTime,
     overUnder: m.params?.overUnder, leagueId: m.leagueId,
+    sport: m.sport,
   };
 }
 

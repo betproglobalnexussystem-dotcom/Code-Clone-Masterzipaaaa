@@ -22,6 +22,10 @@ export interface BetSelection {
   match: string;
   pick: string;
   odd: number;
+  matchId?: number;
+  kickOffTime?: number;
+  sport?: string;
+  marketKey?: string;
 }
 
 function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {

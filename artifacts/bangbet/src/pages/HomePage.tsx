@@ -93,6 +93,7 @@ function apiMatchToMatch(m: ApiMatch, opts?: { boosted?: boolean }): Match | nul
     overUnder: m.params?.overUnder,
     leagueId: m.leagueId,
     isBoosted: opts?.boosted,
+    sport: m.sport,
   };
 }
 

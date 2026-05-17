@@ -3,6 +3,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { startSettlementWorker } from "./workers/settlementWorker.js";
 
 const app: Express = express();
 
@@ -30,5 +31,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+try {
+  startSettlementWorker();
+} catch (e) {
+  logger.warn({ err: e }, "Settlement worker failed to start");
+}
 
 export default app;

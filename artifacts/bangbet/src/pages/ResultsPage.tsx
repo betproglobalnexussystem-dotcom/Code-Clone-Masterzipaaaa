@@ -4,10 +4,11 @@ import {
   Calendar, Clock, Trophy, Activity, TrendingUp, ChevronDown, ChevronRight,
 } from "lucide-react";
 import {
-  api, getLeagueFlagUrl, validScore,
+  getLeagueFlagUrl, validScore,
   SPORT_NAMES, SPORT_ICONS,
 } from "../lib/api";
 import type { ApiResultMatch, MatchResult } from "../lib/api";
+import { useResultsCache } from "../lib/resultsCache";
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 function buildDateList(): Date[] {
@@ -852,63 +853,36 @@ function MatchDetail({ match, onBack, now }: { match: ApiResultMatch; onBack: ()
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
-const POLL_INTERVAL_MS = 20_000; // 20 s silent refresh when live matches exist
-
 export default function ResultsPage() {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date(today));
-  const [resultsMap, setResultsMap] = useState<Record<string, ApiResultMatch[]>>({});
   const [activeSport, setActiveSport] = useState<string>("ALL");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [selected, setSelected] = useState<ApiResultMatch | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [now, setNow] = useState(Date.now());
   const dateScrollRef = useRef<HTMLDivElement>(null);
   const dates = buildDateList();
 
-  // ── Primary fetch ──────────────────────────────────────────────────────────
+  // ── Cache-backed results with smart polling ────────────────────────────────
+  const { data: cacheData, loading, refresh } = useResultsCache(selectedDate);
+  const resultsMap = cacheData?.resultsMap ?? {};
+  const error = cacheData?.error ?? false;
+
   useEffect(() => {
-    setLoading(true);
-    setError(false);
     setSelected(null);
     setActiveSport("ALL");
     setStatusFilter("ALL");
-
-    api.results(selectedDate)
-      .then(res => {
-        setResultsMap(res?.resultsMap ?? {});
-        setLoading(false);
-      })
-      .catch(() => { setError(true); setLoading(false); });
   }, [selectedDate]);
 
-  // ── Silent live-data poll ──────────────────────────────────────────────────
-  const hasLiveMatches = useCallback(() => {
-    return Object.values(resultsMap).some(ms => ms.some(m => isLiveMatch(m)));
-  }, [resultsMap]);
-
+  // Keep selected match in sync when cache updates
   useEffect(() => {
-    if (!hasLiveMatches()) return;
+    if (!selected || !cacheData) return;
+    const allMatches = Object.values(cacheData.resultsMap).flat();
+    const updated = allMatches.find(m => m.id === selected.id);
+    if (updated) setSelected(updated);
+  }, [cacheData]);
 
-    const id = setInterval(() => {
-      api.results(selectedDate)
-        .then(res => {
-          if (res?.resultsMap) {
-            setResultsMap(res.resultsMap);
-            // Also update the detail view match if it's open
-            if (selected) {
-              const allMatches = Object.values(res.resultsMap).flat();
-              const updated = allMatches.find(m => m.id === selected.id);
-              if (updated) setSelected(updated);
-            }
-          }
-        })
-        .catch(() => {});
-    }, POLL_INTERVAL_MS);
-
-    return () => clearInterval(id);
-  }, [hasLiveMatches, selectedDate, selected]);
+  const hasLiveMatches = useCallback(() => cacheData?.hasLive ?? false, [cacheData]);
 
   // ── Per-second clock tick for live minute display ──────────────────────────
   useEffect(() => {
@@ -983,7 +957,7 @@ export default function ResultsPage() {
             </p>
           </div>
           <button
-            onClick={() => setSelectedDate(d => new Date(d))}
+            onClick={refresh}
             style={{
               display: "flex", alignItems: "center", gap: 5,
               background: "var(--green-light)", border: "1px solid var(--border)",
@@ -1110,7 +1084,7 @@ export default function ResultsPage() {
         {!loading && error && (
           <div style={{ textAlign: "center", paddingTop: 60 }}>
             <p style={{ color: "var(--text-muted)", fontSize: 14, marginBottom: 14 }}>Could not load results</p>
-            <button onClick={() => setSelectedDate(d => new Date(d))} style={{
+            <button onClick={refresh} style={{
               background: "var(--green)", color: "#fff", border: "none",
               borderRadius: 10, padding: "10px 28px", fontWeight: 700, fontSize: 13, cursor: "pointer",
             }}>Try again</button>

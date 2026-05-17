@@ -51,14 +51,23 @@ function OddButton({ sel, isSelected, onClick }: { sel: ParsedSelection; isSelec
   );
 }
 
-function MarketRow({ market, matchId, homeTeam, awayTeam, betSelections, onAddBet }: {
+function MarketRow({ market, matchId, homeTeam, awayTeam, betSelections, onAddBet, apiMatchId, matchKickOffTime, matchSport }: {
   market: ParsedMarket; matchId: string; homeTeam: string; awayTeam: string;
   betSelections: BetSelection[]; onAddBet: (bet: BetSelection) => void;
+  apiMatchId?: number; matchKickOffTime?: number; matchSport?: string;
 }) {
   const isSelected = (sel: ParsedSelection) => betSelections.some((b) => b.id === `${matchId}-${sel.tt}-${sel.sv}`);
   const handleClick = (sel: ParsedSelection) => {
     if (sel.status === "L" || sel.odds <= 1) return;
-    onAddBet({ id: `${matchId}-${sel.tt}-${sel.sv}`, match: `${homeTeam} vs ${awayTeam}`, pick: `${market.name}: ${sel.label || sel.sv}`, odd: sel.odds });
+    onAddBet({
+      id: `${matchId}-${sel.tt}-${sel.sv}`,
+      match: `${homeTeam} vs ${awayTeam}`,
+      pick: `${market.name}: ${sel.label || sel.sv}`,
+      odd: sel.odds,
+      matchId: apiMatchId,
+      kickOffTime: matchKickOffTime,
+      sport: matchSport,
+    });
   };
   const chunks: ParsedSelection[][] = [];
   const chunkSize = market.selections.length > 4 ? 3 : market.selections.length;
@@ -80,9 +89,10 @@ function MarketRow({ market, matchId, homeTeam, awayTeam, betSelections, onAddBe
   );
 }
 
-function MarketGroup({ groupName, markets, matchId, homeTeam, awayTeam, betSelections, onAddBet, defaultOpen }: {
+function MarketGroup({ groupName, markets, matchId, homeTeam, awayTeam, betSelections, onAddBet, defaultOpen, apiMatchId, matchKickOffTime, matchSport }: {
   groupName: string; markets: ParsedMarket[]; matchId: string; homeTeam: string; awayTeam: string;
   betSelections: BetSelection[]; onAddBet: (bet: BetSelection) => void; defaultOpen?: boolean;
+  apiMatchId?: number; matchKickOffTime?: number; matchSport?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   if (markets.length === 0) return null;
@@ -96,7 +106,7 @@ function MarketGroup({ groupName, markets, matchId, homeTeam, awayTeam, betSelec
         </div>
       </div>
       {open && markets.map((market) => (
-        <MarketRow key={`${market.bc}-${market.name}`} market={market} matchId={matchId} homeTeam={homeTeam} awayTeam={awayTeam} betSelections={betSelections} onAddBet={onAddBet} />
+        <MarketRow key={`${market.bc}-${market.name}`} market={market} matchId={matchId} homeTeam={homeTeam} awayTeam={awayTeam} betSelections={betSelections} onAddBet={onAddBet} apiMatchId={apiMatchId} matchKickOffTime={matchKickOffTime} matchSport={matchSport} />
       ))}
     </div>
   );
@@ -293,7 +303,16 @@ export default function MatchDetailsPage({ match, onBack, onAddBet, betSelection
 
   const handleMainOdd = (label: string, odd: number, key: string) => {
     if (odd <= 1) return;
-    onAddBet({ id: `${match.id}-${key}`, match: `${match.homeTeam} vs ${match.awayTeam}`, pick: label, odd });
+    onAddBet({
+      id: `${match.id}-${key}`,
+      match: `${match.homeTeam} vs ${match.awayTeam}`,
+      pick: label,
+      odd,
+      matchId: match.apiId,
+      kickOffTime: match.kickOffTime,
+      sport: match.sport,
+      marketKey: key,
+    });
   };
 
   const parsedMarkets = details ? parseBetMap(details.betMap) : [];
@@ -411,7 +430,8 @@ export default function MatchDetailsPage({ match, onBack, onAddBet, betSelection
                   <MarketGroup key={groupName} groupName={groupName} markets={markets} matchId={match.id}
                     homeTeam={match.homeTeam} awayTeam={match.awayTeam}
                     betSelections={betSelections} onAddBet={onAddBet}
-                    defaultOpen={groupName === "Main Markets"} />
+                    defaultOpen={groupName === "Main Markets"}
+                    apiMatchId={match.apiId} matchKickOffTime={match.kickOffTime} matchSport={match.sport} />
                 );
               })}
             </>
