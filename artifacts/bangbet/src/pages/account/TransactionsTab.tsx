@@ -12,7 +12,7 @@ const TYPE_CONFIG: Record<Transaction["type"], { icon: typeof ArrowDownCircle; c
 };
 
 function TxnCard({ txn }: { txn: Transaction }) {
-  const cfg = TYPE_CONFIG[txn.type];
+  const cfg = TYPE_CONFIG[txn.type] ?? { icon: ArrowDownCircle, color: "#94a3b8", label: txn.type ?? "Transaction" };
   const Icon = cfg.icon;
   const isCredit = ["deposit", "bonus", "win", "referral"].includes(txn.type);
 
