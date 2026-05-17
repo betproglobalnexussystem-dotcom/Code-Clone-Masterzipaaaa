@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { CreditCard, Wallet, Gift, Users, Copy, CheckCircle, AlertCircle, X, ChevronRight, Smartphone, Building2, Star } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { CreditCard, Wallet, Gift, Users, Copy, CheckCircle, AlertCircle, X, ChevronRight, Smartphone, Star, Loader2, Clock } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { apiDeposit, apiWithdraw, apiRequestStatus, normalizeMsisdn, parseRequestStatus } from "../../lib/paymentApi";
 
-function Modal({ title, accent, onClose, children }: { title: string; accent: string; onClose: () => void; children: React.ReactNode }) {
+function Modal({ title, accent, onClose, children }: { title: React.ReactNode; accent: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-content">
@@ -18,39 +19,134 @@ function Modal({ title, accent, onClose, children }: { title: string; accent: st
   );
 }
 
-function Alert({ type, msg }: { type: "error" | "success"; msg: string }) {
+function Alert({ type, msg }: { type: "error" | "success" | "info"; msg: string }) {
+  const colors = {
+    error: { bg: "#ffeaea", border: "#ffb3b3", text: "#c62828" },
+    success: { bg: "#e8f5e9", border: "#a5d6a7", text: "#2e7d32" },
+    info: { bg: "#e3f2fd", border: "#90caf9", text: "#1565c0" },
+  };
+  const c = colors[type];
+  const Icon = type === "error" ? AlertCircle : type === "success" ? CheckCircle : Clock;
   return (
-    <div style={{ display: "flex", gap: 8, background: type === "error" ? "#ffeaea" : "#e8f5e9", border: `1px solid ${type === "error" ? "#ffb3b3" : "#a5d6a7"}`, borderRadius: 10, padding: "10px 12px", marginBottom: 14, color: type === "error" ? "#c62828" : "#2e7d32", fontSize: 13, fontWeight: 600, alignItems: "center" }}>
-      {type === "error" ? <AlertCircle size={16} style={{ flexShrink: 0 }} /> : <CheckCircle size={16} style={{ flexShrink: 0 }} />}
+    <div style={{ display: "flex", gap: 8, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, padding: "10px 12px", marginBottom: 14, color: c.text, fontSize: 13, fontWeight: 600, alignItems: "center" }}>
+      <Icon size={16} style={{ flexShrink: 0 }} />
       {msg}
     </div>
   );
 }
 
+type DepositStage = "form" | "awaiting" | "success" | "failed";
+
 function DepositModal({ onClose }: { onClose: () => void }) {
-  const { user, deposit } = useAuth();
+  const { user, creditBalance } = useAuth();
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("MTN Mobile Money");
   const [number, setNumber] = useState(user?.phone || "");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [stage, setStage] = useState<DepositStage>("form");
+  const [dots, setDots] = useState("");
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const presets = [5000, 10000, 20000, 50000, 100000];
 
+  const stopPolling = () => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+  };
+
+  useEffect(() => () => stopPolling(), []);
+
+  useEffect(() => {
+    if (stage !== "awaiting") return;
+    const t = setInterval(() => setDots((d) => (d.length >= 3 ? "" : d + ".")), 500);
+    return () => clearInterval(t);
+  }, [stage]);
+
   const handleDeposit = async () => {
     setError("");
-    if (!number.trim()) { setError("Please enter your mobile number."); return; }
     const amt = parseInt(amount.replace(/,/g, ""));
-    if (isNaN(amt)) { setError("Please enter a valid amount."); return; }
-    const result = await deposit(amt, method);
-    if (result.success) { setSuccess(true); setTimeout(onClose, 1200); }
-    else setError(result.error || "Deposit failed.");
+    if (!number.trim()) { setError("Please enter your mobile number."); return; }
+    if (isNaN(amt) || amt < 1000) { setError("Minimum deposit is UGX 1,000."); return; }
+    if (amt > 10_000_000) { setError("Maximum deposit is UGX 10,000,000."); return; }
+
+    const msisdn = normalizeMsisdn(number.trim());
+    setStage("awaiting");
+
+    let data: any;
+    try {
+      data = await apiDeposit(msisdn, amt);
+    } catch {
+      setStage("failed");
+      setError("Could not reach payment server. Please try again.");
+      return;
+    }
+
+    if (!data?.internal_reference) {
+      setStage("failed");
+      setError(data?.message || data?.error || "Payment initiation failed.");
+      return;
+    }
+
+    const ref = data.internal_reference;
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const status = await apiRequestStatus(ref);
+        const s = parseRequestStatus(status);
+        if (s === "success") {
+          stopPolling();
+          await creditBalance(amt, `Deposit via ${method} (${msisdn})`);
+          setStage("success");
+          setTimeout(onClose, 2000);
+        } else if (s === "failed" || s === "error" || s === "cancelled") {
+          stopPolling();
+          setStage("failed");
+          setError(status?.message || "Payment was not completed. Please try again.");
+        }
+      } catch {
+        // network blip — keep polling
+      }
+    }, 1000);
   };
+
+  if (stage === "success") {
+    return (
+      <Modal title={<>DEPOSIT <span className="highlight">FUNDS</span></>} accent="var(--green)" onClose={onClose}>
+        <div style={{ textAlign: "center", padding: "24px 0" }}>
+          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#e8f5e9", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+            <CheckCircle size={36} color="var(--green)" />
+          </div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "var(--dark)", fontFamily: "Oswald, sans-serif" }}>DEPOSIT SUCCESSFUL</div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6 }}>
+            UGX {parseInt(amount.replace(/,/g, "")).toLocaleString()} added to your wallet
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
+  if (stage === "awaiting") {
+    return (
+      <Modal title={<>DEPOSIT <span className="highlight">FUNDS</span></>} accent="var(--green)" onClose={() => { stopPolling(); onClose(); }}>
+        <div style={{ textAlign: "center", padding: "28px 0" }}>
+          <Loader2 size={48} style={{ animation: "spin 1s linear infinite", color: "var(--green)", margin: "0 auto 16px", display: "block" }} />
+          <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dark)", fontFamily: "Oswald, sans-serif", marginBottom: 8 }}>
+            CHECK YOUR PHONE{dots}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
+            A payment prompt has been sent to<br />
+            <strong style={{ color: "var(--dark)" }}>{normalizeMsisdn(number.trim())}</strong>.<br />
+            Enter your PIN to confirm.
+          </div>
+          <div style={{ marginTop: 18, fontSize: 12, color: "var(--text-muted)" }}>Waiting for confirmation…</div>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal title={<>DEPOSIT <span className="highlight">FUNDS</span></>} accent="var(--green)" onClose={onClose}>
       {error && <Alert type="error" msg={error} />}
-      {success && <Alert type="success" msg="Deposit successful! Balance updated." />}
+      {stage === "failed" && !error && <Alert type="error" msg="Payment failed. Please try again." />}
 
       <div className="form-group">
         <label className="form-label">Select Method</label>
@@ -86,27 +182,115 @@ function DepositModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+type WithdrawStage = "form" | "awaiting" | "success" | "failed";
+
 function WithdrawModal({ onClose }: { onClose: () => void }) {
-  const { user, withdraw } = useAuth();
+  const { user, debitBalance } = useAuth();
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("MTN Mobile Money");
   const [number, setNumber] = useState(user?.phone || "");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [stage, setStage] = useState<WithdrawStage>("form");
+  const [dots, setDots] = useState("");
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopPolling = () => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+  };
+
+  useEffect(() => () => stopPolling(), []);
+
+  useEffect(() => {
+    if (stage !== "awaiting") return;
+    const t = setInterval(() => setDots((d) => (d.length >= 3 ? "" : d + ".")), 500);
+    return () => clearInterval(t);
+  }, [stage]);
 
   const handleWithdraw = async () => {
     setError("");
     const amt = parseInt(amount.replace(/,/g, ""));
-    if (isNaN(amt)) { setError("Please enter a valid amount."); return; }
-    const result = await withdraw(amt, method, number);
-    if (result.success) { setSuccess(true); setTimeout(onClose, 1200); }
-    else setError(result.error || "Withdrawal failed.");
+    if (!number.trim()) { setError("Please enter your mobile number."); return; }
+    if (isNaN(amt) || amt < 5000) { setError("Minimum withdrawal is UGX 5,000."); return; }
+    if (amt > (user?.balance || 0)) { setError("Insufficient balance."); return; }
+
+    const msisdn = normalizeMsisdn(number.trim());
+    setStage("awaiting");
+
+    let data: any;
+    try {
+      data = await apiWithdraw(msisdn, amt);
+    } catch {
+      setStage("failed");
+      setError("Could not reach payment server. Please try again.");
+      return;
+    }
+
+    if (!data?.internal_reference) {
+      setStage("failed");
+      setError(data?.message || data?.error || "Withdrawal initiation failed.");
+      return;
+    }
+
+    const ref = data.internal_reference;
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const status = await apiRequestStatus(ref);
+        const s = parseRequestStatus(status);
+        if (s === "success") {
+          stopPolling();
+          await debitBalance(amt, `Withdrawal to ${method} (${msisdn})`);
+          setStage("success");
+          setTimeout(onClose, 2000);
+        } else if (s === "failed" || s === "error" || s === "cancelled") {
+          stopPolling();
+          setStage("failed");
+          setError(status?.message || "Withdrawal was not completed. Please try again.");
+        }
+      } catch {
+        // network blip — keep polling
+      }
+    }, 1000);
   };
+
+  if (stage === "success") {
+    return (
+      <Modal title={<>WITHDRAW <span className="highlight">FUNDS</span></>} accent="#1565c0" onClose={onClose}>
+        <div style={{ textAlign: "center", padding: "24px 0" }}>
+          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#e3f2fd", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+            <CheckCircle size={36} color="#1565c0" />
+          </div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "var(--dark)", fontFamily: "Oswald, sans-serif" }}>WITHDRAWAL SUCCESSFUL</div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6 }}>
+            UGX {parseInt(amount.replace(/,/g, "")).toLocaleString()} sent to your mobile money
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
+  if (stage === "awaiting") {
+    return (
+      <Modal title={<>WITHDRAW <span className="highlight">FUNDS</span></>} accent="#1565c0" onClose={() => { stopPolling(); onClose(); }}>
+        <div style={{ textAlign: "center", padding: "28px 0" }}>
+          <Loader2 size={48} style={{ animation: "spin 1s linear infinite", color: "#1565c0", margin: "0 auto 16px", display: "block" }} />
+          <div style={{ fontSize: 15, fontWeight: 800, color: "var(--dark)", fontFamily: "Oswald, sans-serif", marginBottom: 8 }}>
+            PROCESSING WITHDRAWAL{dots}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
+            Sending UGX {parseInt(amount.replace(/,/g, "")).toLocaleString()} to<br />
+            <strong style={{ color: "var(--dark)" }}>{normalizeMsisdn(number.trim())}</strong>
+          </div>
+          <div style={{ marginTop: 18, fontSize: 12, color: "var(--text-muted)" }}>Waiting for confirmation…</div>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal title={<>WITHDRAW <span className="highlight">FUNDS</span></>} accent="#1565c0" onClose={onClose}>
       {error && <Alert type="error" msg={error} />}
-      {success && <Alert type="success" msg="Withdrawal submitted! Funds arriving shortly." />}
+      {stage === "failed" && !error && <Alert type="error" msg="Withdrawal failed. Please try again." />}
 
       <div style={{ background: "var(--green-light)", border: "1px solid var(--border)", borderRadius: 10, padding: "10px 14px", marginBottom: 14, display: "flex", justifyContent: "space-between" }}>
         <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Available Balance</span>
@@ -154,13 +338,14 @@ function ReferModal({ onClose }: { onClose: () => void }) {
   const handleClaim = () => {
     setError(""); setSuccess(false);
     if (!code.trim()) { setError("Please enter a referral code."); return; }
-    const result = claimReferral(code);
-    if (result.success) setSuccess(true);
-    else setError(result.error || "Failed.");
+    claimReferral(code).then((result) => {
+      if (result.success) setSuccess(true);
+      else setError(result.error || "Failed.");
+    });
   };
 
   return (
-    <Modal title={<>REFER <span className="highlight">& EARN</span></>} accent="#e65100" onClose={onClose}>
+    <Modal title={<>REFER <span className="highlight">&amp; EARN</span></>} accent="#e65100" onClose={onClose}>
       <div style={{ background: "linear-gradient(135deg, #e65100, #ff8f00)", borderRadius: 14, padding: 16, marginBottom: 18, textAlign: "center" }}>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginBottom: 6 }}>Your Referral Code</div>
         <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", fontFamily: "Oswald, sans-serif", letterSpacing: 2, marginBottom: 10 }}>{user?.referralCode}</div>
@@ -208,7 +393,6 @@ export default function WalletTab() {
       {showWithdraw && <WithdrawModal onClose={() => setShowWithdraw(false)} />}
       {showRefer && <ReferModal onClose={() => setShowRefer(false)} />}
 
-      {/* Balance Cards */}
       <div style={{ padding: "14px 14px 0" }}>
         <div style={{ background: "linear-gradient(135deg, #1a6e3d, #2DA962)", borderRadius: 16, padding: "18px 18px 14px", marginBottom: 10, boxShadow: "0 4px 18px rgba(45,169,98,0.35)" }}>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Main Balance</div>
@@ -235,9 +419,8 @@ export default function WalletTab() {
         </div>
       </div>
 
-      {/* Bonuses Section */}
       <div style={{ padding: "0 14px" }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--dark)", fontFamily: "Oswald, sans-serif", letterSpacing: 0.5, marginBottom: 10, textTransform: "uppercase" }}>Bonuses & Promotions</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--dark)", fontFamily: "Oswald, sans-serif", letterSpacing: 0.5, marginBottom: 10, textTransform: "uppercase" }}>Bonuses &amp; Promotions</div>
 
         {[
           { icon: Gift, title: "Welcome Bonus", desc: "100% up to UGX 370,000 on first deposit", tag: "Active", tagColor: "var(--green)", bg: "linear-gradient(135deg, #2DA962, #228a4f)" },
@@ -256,13 +439,12 @@ export default function WalletTab() {
           </div>
         ))}
 
-        {/* Refer & Earn */}
         <div onClick={() => setShowRefer(true)} style={{ background: "linear-gradient(135deg, #e65100, #ff8f00)", borderRadius: 14, padding: "16px 14px", marginBottom: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <Users size={24} color="#fff" />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: "Oswald, sans-serif", letterSpacing: 0.5, marginBottom: 3 }}>REFER & EARN UGX 500</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: "Oswald, sans-serif", letterSpacing: 0.5, marginBottom: 3 }}>REFER &amp; EARN UGX 500</div>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.85)", lineHeight: 1.4 }}>Invite friends — you both get UGX 500 bonus when they join</div>
           </div>
           <ChevronRight size={20} color="rgba(255,255,255,0.7)" />

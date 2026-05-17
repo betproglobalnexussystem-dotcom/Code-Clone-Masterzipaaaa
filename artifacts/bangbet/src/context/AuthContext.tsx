@@ -51,6 +51,8 @@ interface AuthContextType {
   deposit: (amount: number, method: string) => Promise<{ success: boolean; error?: string }>;
   withdraw: (amount: number, method: string, number: string) => Promise<{ success: boolean; error?: string }>;
   claimReferral: (code: string) => Promise<{ success: boolean; error?: string }>;
+  creditBalance: (amount: number, description: string) => Promise<void>;
+  debitBalance: (amount: number, description: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -301,6 +303,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const creditBalance = async (amount: number, description: string): Promise<void> => {
+    if (!fbUser) return;
+    await updateDoc(doc(db, "users", fbUser.uid), {
+      balance: increment(amount),
+      totalDeposited: increment(amount),
+      lastSeen: nowString(),
+    });
+    await addTransaction(fbUser.uid, {
+      type: "deposit",
+      amount,
+      description,
+      status: "completed",
+    });
+  };
+
+  const debitBalance = async (amount: number, description: string): Promise<void> => {
+    if (!fbUser) return;
+    await updateDoc(doc(db, "users", fbUser.uid), {
+      balance: increment(-amount),
+      totalWithdrawn: increment(amount),
+      lastSeen: nowString(),
+    });
+    await addTransaction(fbUser.uid, {
+      type: "withdraw",
+      amount,
+      description,
+      status: "completed",
+    });
+  };
+
   const claimReferral = async (code: string): Promise<{ success: boolean; error?: string }> => {
     if (!fbUser || !user) return { success: false, error: "Not logged in." };
     const cleaned = code.trim().toUpperCase();
@@ -345,6 +377,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user, loading, transactions,
       login, register, logout, changePassword, updateProfile,
       deposit, withdraw, claimReferral,
+      creditBalance, debitBalance,
     }}>
       {children}
     </AuthContext.Provider>
