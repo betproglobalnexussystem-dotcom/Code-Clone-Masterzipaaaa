@@ -229,9 +229,9 @@ let _interval: ReturnType<typeof setInterval> | null = null;
 
 export function startSettlementWorker(): void {
   if (_interval) return;
-  console.log("[Settlement] Worker starting — 30 s interval");
+  console.log("[Settlement] Worker starting — 10 s interval");
   runCycle().catch(console.error);
-  _interval = setInterval(() => runCycle().catch(console.error), 30_000);
+  _interval = setInterval(() => runCycle().catch(console.error), 10_000);
 }
 
 export function stopSettlementWorker(): void {

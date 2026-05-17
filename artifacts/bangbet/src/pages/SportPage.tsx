@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { Globe, Shield, Search, Loader2 } from "lucide-react";
+import { Globe, Shield, Search, Loader2, Zap } from "lucide-react";
 import type { BetSelection } from "../App";
 import MatchCard, { type Match } from "../components/MatchCard";
-import { api, getOdds1X2, formatKickOff, getLeagueFlagUrl, type ApiMatch, SPORTS } from "../lib/api";
+import { api, getOdds1X2, getBoostedOdds, formatKickOff, getLeagueFlagUrl, type ApiMatch, SPORTS } from "../lib/api";
 import StatsModal from "../components/StatsModal";
 
 const _sportCache: Record<string, { matches: Match[]; leagues: string[]; ready: boolean }> = {};
@@ -49,6 +49,19 @@ function LeagueFlag({ leagueName }: { leagueName: string }) {
   return <Globe size={12} style={{ flexShrink: 0, opacity: 0.5, marginRight: 2 }} />;
 }
 
+function apiBoostedToMatch(m: ApiMatch): Match | null {
+  const odds = getBoostedOdds(m.betMap);
+  if (!odds) return null;
+  return {
+    id: `b-${m.id}`, apiId: m.id, brMatchId: m.brMatchId,
+    league: m.leagueName, homeTeam: m.home, awayTeam: m.away,
+    time: formatKickOff(m.kickOffTime),
+    isLive: m.live === true && m.kickOffTime < Date.now(),
+    odds, oddsCount: m.oddsCount, kickOffTime: m.kickOffTime,
+    isBoosted: true, sport: m.sport,
+  };
+}
+
 function apiMatchToMatch(m: ApiMatch): Match | null {
   const odds = getOdds1X2(m.betMap);
   if (!odds) {
@@ -85,6 +98,7 @@ export default function SportPage({ onAddBet, betSelections, onMatchClick, isLiv
   const [activeSport, setActiveSport] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [allMatches, setAllMatches] = useState<Match[]>(() => _sportCache["S"]?.matches ?? []);
+  const [boostedMatches, setBoostedMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(() => !(_sportCache["S"]?.ready));
   const [statsMatch, setStatsMatch] = useState<Match | null>(null);
   const [activeLeague, setActiveLeague] = useState("All");
@@ -139,6 +153,15 @@ export default function SportPage({ onAddBet, betSelections, onMatchClick, isLiv
         _sportCache[sport.code] = { matches: parsed, leagues: newLeagues, ready: true };
         setAllMatches(parsed);
         setLeagues(newLeagues);
+
+        api.boostedMatches(sport.code).then((resp) => {
+          const boosted: Match[] = [];
+          const seen = new Set<number>();
+          (resp.esMatches || []).forEach((m) => {
+            if (!seen.has(m.id)) { seen.add(m.id); const bm = apiBoostedToMatch(m); if (bm) boosted.push(bm); }
+          });
+          setBoostedMatches(boosted);
+        }).catch(() => setBoostedMatches([]));
       } catch (err) {
         console.error("Failed to fetch sport matches", err);
         setAllMatches([]);
@@ -147,6 +170,7 @@ export default function SportPage({ onAddBet, betSelections, onMatchClick, isLiv
       }
     }
 
+    setBoostedMatches([]);
     load();
   }, [activeSport, isLive]);
 
@@ -253,6 +277,23 @@ export default function SportPage({ onAddBet, betSelections, onMatchClick, isLiv
           </span>
           <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Sorted by start time</span>
         </div>
+      )}
+
+      {/* Boosted Odds Section */}
+      {!loading && boostedMatches.length > 0 && !isLive && (
+        <>
+          <div style={{ padding: "10px 14px 6px", background: "#fff", borderBottom: "1px solid var(--border2)", display: "flex", alignItems: "center", gap: 7 }}>
+            <Zap size={14} style={{ color: "#fb8c00" }} fill="#fb8c00" />
+            <span style={{ fontSize: 13, fontWeight: 800, color: "#fb8c00", fontFamily: "Oswald, sans-serif", letterSpacing: 0.5 }}>BOOSTED ODDS</span>
+            <span style={{ fontSize: 10, background: "rgba(251,140,0,0.12)", color: "#fb8c00", fontWeight: 700, padding: "1px 7px", borderRadius: 8, fontFamily: "Oswald, sans-serif" }}>{boostedMatches.length}</span>
+          </div>
+          <div className="match-list">
+            {boostedMatches.map((m) => (
+              <MatchCard key={m.id} match={m} onAddBet={onAddBet} betSelections={betSelections} onMatchClick={onMatchClick} onStatsClick={setStatsMatch} />
+            ))}
+          </div>
+          <div style={{ height: 6, background: "var(--border2)" }} />
+        </>
       )}
 
       {/* Matches */}

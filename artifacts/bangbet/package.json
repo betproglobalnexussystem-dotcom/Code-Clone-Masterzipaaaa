@@ -75,6 +75,8 @@
     "zod": "catalog:"
   },
   "dependencies": {
-    "firebase": "^12.13.0"
+    "@types/jsbarcode": "^3.11.4",
+    "firebase": "^12.13.0",
+    "jsbarcode": "^3.12.3"
   }
 }
