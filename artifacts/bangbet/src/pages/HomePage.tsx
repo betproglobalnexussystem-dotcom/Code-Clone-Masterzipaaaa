@@ -5,7 +5,7 @@ import type { Page } from "../App";
 import MatchCard, { type Match } from "../components/MatchCard";
 import { api, getOdds1X2, getBoostedOdds, formatKickOff, getLeagueFlagUrl, type ApiMatch } from "../lib/api";
 import StatsModal from "../components/StatsModal";
-import { collection, query, orderBy, where, onSnapshot, doc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useUnreadNotifCount } from "./NotificationsPage";
 
@@ -155,11 +155,12 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
   const [leagues, setLeagues] = useState<string[]>(() => _homeCache.leagues);
 
   useEffect(() => {
-    const q = query(collection(db, "carousel"), where("active", "==", true), orderBy("order", "asc"));
+    const q = query(collection(db, "carousel"), orderBy("order", "asc"));
     const unsub = onSnapshot(q, (snap) => {
-      setFirestoreBanners(snap.docs.map(d => ({ id: d.id, ...d.data() } as FirestoreBanner)));
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() } as FirestoreBanner));
+      setFirestoreBanners(all.filter(b => b.active));
       setBannersLoaded(true);
-    }, () => { setBannersLoaded(true); });
+    }, (err) => { console.error("Carousel fetch error:", err); setBannersLoaded(true); });
     return unsub;
   }, []);
 
