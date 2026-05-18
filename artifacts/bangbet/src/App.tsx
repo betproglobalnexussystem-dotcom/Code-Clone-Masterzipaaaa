@@ -13,6 +13,7 @@ import BetSlip from "./components/BetSlip";
 import AdminPage from "./pages/admin/AdminPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import PendingPaymentRecovery from "./components/PendingPaymentRecovery";
+import ClientSettlement from "./components/ClientSettlement";
 import type { Match } from "./components/MatchCard";
 import "./index.css";
 
@@ -101,6 +102,7 @@ function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {
   return (
     <div id="root">
       <PendingPaymentRecovery />
+      <ClientSettlement />
       <Header onLoginClick={openLogin} onRegisterClick={openRegister} onHomeClick={() => { setSelectedMatch(null); setActivePage("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
       <main className="main-content">
         {selectedMatch ? (
