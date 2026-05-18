@@ -208,7 +208,7 @@ export default function MatchAI({ match, onAddBet, betSelections }: MatchAIProps
 
   const probs = calcProbs(match.odds.home, match.odds.draw, match.odds.away);
 
-  const systemPrompt = `You are BangBet AI — an expert football analyst, statistician and betting advisor.
+  const systemPrompt = `You are BetMali AI — an expert football analyst, statistician and betting advisor.
 
 MATCH: ${match.homeTeam} vs ${match.awayTeam}
 COMPETITION: ${match.league}
@@ -319,7 +319,7 @@ RESPONSE FORMAT RULES:
                   <div style={{ width: 24, height: 24, background: "var(--green)", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Bot size={13} color="#fff" />
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#1a6e3d", fontFamily: "Oswald, sans-serif", letterSpacing: 0.3 }}>BANGBET AI ANALYSIS</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#1a6e3d", fontFamily: "Oswald, sans-serif", letterSpacing: 0.3 }}>BETMALI AI ANALYSIS</span>
                 </div>
                 <RichText text={msg.content} />
                 {msg.recBets && msg.recBets.length > 0 && (
