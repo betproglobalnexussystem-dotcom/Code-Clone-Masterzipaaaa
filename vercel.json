@@ -1,6 +1,6 @@
 {
   "buildCommand": "pnpm --filter @workspace/bangbet run build",
-  "outputDirectory": "artifacts/bangbet/dist/public",
+  "outputDirectory": "public",
   "installCommand": "pnpm install",
   "framework": null,
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
