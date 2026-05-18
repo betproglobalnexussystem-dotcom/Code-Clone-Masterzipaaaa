@@ -1,0 +1,65 @@
+Deployment Details
+Build Failed
+No Output Directory named "public" found after the Build completed. Configure the Output Directory in your Project Settings. Alternatively, configure vercel.json#outputDirectory.
+Created
+betproglobalnexussystem-2953 Avatar
+betproglobalnexussystem-2953
+Just now
+Status
+Error
+Latest
+Duration
+19s
+Just now
+Environment
+Production
+Domains
+bettinug-git-main-betproglobalnexussystem-2953s-projects.vercel.app
+bettinug-ld07d7wkk-betproglobalnexussystem-2953s-projects.vercel.app
+Source
+main
+4ac0838
+Adjust build output to resolve deployment errors
+
+Deployment Settings
+3 Recommendations
+Build Logs
+19s
+127 lines
+Find in logs
+CtrlF
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Done in 11.4s using pnpm v10.28.0
+> @workspace/bangbet@0.0.0 build /vercel/path0/artifacts/bangbet
+> vite build --config vite.config.ts
+vite v7.3.3 building client environment for production...
+transforming...
+✓ 1838 modules transformed.
+rendering chunks...
+computing gzip size...
+../../public/index.html                   2.23 kB │ gzip:   0.79 kB
+../../public/assets/index-CRG6gCka.css   24.54 kB │ gzip:   4.97 kB
+../../public/assets/index-Baxx0dPS.js   948.30 kB │ gzip: 263.31 kB
+✓ built in 5.49s
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+Error: No Output Directory named "public" found after the Build completed. Configure the Output Directory in your Project Settings. Alternatively, configure vercel.json#outputDirectory.
+Learn More: https://vercel.link/missing-public-directory
+Deployment Summary
+Deployment Checks
+Assigning Custom Domains
+Runtime Logs
+
+View and debug runtime logs & errors
+
+Observability
+
+Monitor app health & performance
+
+Speed Insights
+
+Not Enabled
+Performance metrics from real us
