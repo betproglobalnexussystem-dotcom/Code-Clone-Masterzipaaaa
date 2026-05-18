@@ -700,6 +700,16 @@ input, select, textarea { font-family: inherit; outline: none; }
   60%  { text-shadow: 0 0 8px #ffd700, 0 0 20px #ff8c00; filter: brightness(1.25); }
   100% { text-shadow: none; filter: brightness(1); }
 }
+
+@keyframes jackpotBust {
+  0%   { background: linear-gradient(135deg, #b8860b 0%, #ffd700 100%); transform: scale(1); }
+  100% { background: linear-gradient(135deg, #ff6b00 0%, #ffd700 60%, #ff6b00 100%); transform: scale(1.012); }
+}
+
+@keyframes winnerPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
 .jackpot-glow-active {
   animation: jackpotGlow 0.55s ease-out forwards;
 }

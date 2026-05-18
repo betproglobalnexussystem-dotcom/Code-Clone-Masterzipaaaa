@@ -142,7 +142,11 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
   const [firestoreBanners, setFirestoreBanners] = useState<FirestoreBanner[]>([]);
   const [bannersLoaded, setBannersLoaded] = useState(false);
   const [jackpot, setJackpot] = useState(37_000_000);
-  const [displayJackpot, setDisplayJackpot] = useState(37_000_000);
+  const [displayJackpot, setDisplayJackpot] = useState(0);
+  const [bustTarget, setBustTarget] = useState(0);
+  const [isBusting, setIsBusting] = useState(false);
+  const [winnerNotice, setWinnerNotice] = useState("");
+  const [bustFlash, setBustFlash] = useState(false);
   const [jackpotSub, setJackpotSub] = useState("Predict 13 games · Closes in 2h 34m");
   const [noticeText, setNoticeText] = useState("Welcome Bonus: 100% up to UGX 370,000 on your first deposit! \u00a0\u00a0\u00a0 Jackpot of UGX 37,000,000 this weekend! \u00a0\u00a0\u00a0 Withdraw via Mobile Money in under 5 minutes!");
   const unreadCount = useUnreadNotifCount();
@@ -164,11 +168,26 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
     return unsub;
   }, []);
 
+  const newBustTarget = (max: number) =>
+    Math.floor(max * (0.55 + Math.random() * 0.38));
+
+  const randomPhone = () => {
+    const prefixes = ["070", "071", "072", "074", "075", "076", "077", "078"];
+    const p = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const mid = String(Math.floor(Math.random() * 900) + 100);
+    const suffix = String(Math.floor(Math.random() * 900) + 100);
+    return `${p}****${mid}${suffix}`.slice(0, 13);
+  };
+
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "settings", "jackpot"), (snap) => {
       if (snap.exists()) {
         const d = snap.data();
-        if (d.amount) { setJackpot(d.amount); setDisplayJackpot(d.amount); }
+        if (d.amount) {
+          setJackpot(d.amount);
+          setBustTarget(newBustTarget(d.amount));
+          setDisplayJackpot(0);
+        }
         if (d.closesAt) setJackpotSub(d.closesAt);
       }
     }, () => {});
@@ -176,17 +195,39 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
   }, []);
 
   useEffect(() => {
-    const tick = () => {
-      const increment = Math.floor(Math.random() * 450) + 50;
-      setDisplayJackpot((prev) => prev + increment);
-    };
+    if (bustTarget === 0) { setBustTarget(newBustTarget(jackpot)); }
+  }, [jackpot]);
+
+  useEffect(() => {
+    if (isBusting) return;
     const scheduleNext = () => {
-      const delay = Math.floor(Math.random() * 2000) + 800;
-      return setTimeout(() => { tick(); timerId = scheduleNext(); }, delay);
+      const delay = Math.floor(Math.random() * 500) + 250;
+      return setTimeout(() => {
+        setDisplayJackpot((prev) => prev + Math.floor(Math.random() * 150_000) + 50_000);
+        timerId = scheduleNext();
+      }, delay);
     };
     let timerId = scheduleNext();
     return () => clearTimeout(timerId);
-  }, []);
+  }, [isBusting]);
+
+  useEffect(() => {
+    if (bustTarget > 0 && displayJackpot >= bustTarget && !isBusting) {
+      setIsBusting(true);
+      setBustFlash(true);
+      const won = displayJackpot;
+      const phone = randomPhone();
+      const announcement = `\u00a0\u00a0\u00a0\u00a0🏆 ${phone} WON UGX ${won.toLocaleString()}! JACKPOT BUSTED!\u00a0\u00a0\u00a0\u00a0`;
+      setWinnerNotice(announcement);
+      setTimeout(() => setBustFlash(false), 2_000);
+      setTimeout(() => {
+        setDisplayJackpot(0);
+        setBustTarget(newBustTarget(jackpot));
+        setIsBusting(false);
+      }, 3_500);
+      setTimeout(() => setWinnerNotice(""), 90_000);
+    }
+  }, [displayJackpot, bustTarget, isBusting, jackpot]);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "settings", "notice"), (snap) => {
@@ -313,7 +354,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
             <span style={{ position: "absolute", top: -5, right: -5, background: "#ef4444", color: "#fff", fontSize: 8, fontWeight: 800, borderRadius: "50%", width: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>{unreadCount > 9 ? "9+" : unreadCount}</span>
           )}
         </div>
-        <div className="notice-scroll">{noticeText}</div>
+        <div className="notice-scroll">{winnerNotice}{noticeText}</div>
       </div>
 
       <div className="banner-slider">
@@ -372,14 +413,20 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
 
       <div className="divider-thick" />
 
-      <div className="jackpot-banner">
+      <div className="jackpot-banner" style={bustFlash ? { animation: "jackpotBust 0.35s ease-in-out infinite alternate" } : undefined}>
         <div className="jackpot-info">
-          <div className="jackpot-label"><Trophy size={13} /> MEGA JACKPOT</div>
+          <div className="jackpot-label"><Trophy size={13} /> {bustFlash ? "🎉 JACKPOT BUSTED!" : "MEGA JACKPOT"}</div>
           <div className="jackpot-amount" style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginRight: 2 }}>UGX</span>
             <JackpotOdometer value={displayJackpot} fontSize={26} />
           </div>
-          <div className="jackpot-sub">{jackpotSub}</div>
+          <div className="jackpot-sub">
+            {bustFlash
+              ? "A lucky player just won! 🏆"
+              : bustTarget > 0 && displayJackpot > bustTarget * 0.8
+                ? "⚡ BUSTING SOON — Play Now!"
+                : jackpotSub}
+          </div>
         </div>
         <button className="jackpot-btn" onClick={onOpenLogin}><Play size={13} fill="currentColor" /> PLAY</button>
       </div>
