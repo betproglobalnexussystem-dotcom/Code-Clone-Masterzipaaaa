@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-20", "web", "bash", "nix"]
 
 [deployment]
 router = "application"
@@ -20,10 +20,6 @@ author = "agent"
 task = "workflow.run"
 args = "Start application"
 
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Settlement Worker (API Server)"
-
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -35,18 +31,6 @@ outputType = "webview"
 task = "shell.exec"
 args = "PORT=5000 BASE_PATH=/ pnpm --filter @workspace/bangbet run dev"
 waitForPort = 5000
-
-[[workflows.workflow]]
-name = "Settlement Worker (API Server)"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "PORT=3000 pnpm --filter @workspace/api-server run dev"
-waitForPort = 3000
-
-[workflows.workflow.metadata]
-outputType = "console"
 
 [agent]
 stack = "BEST_EFFORT_FALLBACK"
@@ -62,11 +46,7 @@ externalPort = 3000
 
 [[ports]]
 localPort = 5000
-externalPort = 5000
-
-[[ports]]
-localPort = 8080
-externalPort = 8080
+externalPort = 80
 
 [[ports]]
 localPort = 8081
@@ -88,3 +68,6 @@ externalPort = 3000
 
 [userenv.shared]
 FIREBASE_SERVICE_ACCOUNT_JSON = '{"type":"service_account","project_id":"bet-mali-africa","private_key_id":"6df0d5a628d91f19a772439839ec0c1cadc9ef6d","private_key":"-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC5Ozi3DQfDBHdP\nI+pA5TOGLNMvHZvIaOEcGb+6TOFFMvNA+wMu2wfJYAts/BOSwqNNQogVJipovyPy\nl3Ou6Hn2eZvS3krRCXwHKI5m0oCa7D7fFr9Az9oVLEnx94r/hJr+tyY5mmtr5fg0\nOFGE9+wlYmSiygSGgHXu1qTWPgjcRM23VZX1P34QEUnVR9LLvAxuT3bQGPw7zI7p\njEkBepkzW1/Ip8gflRSu8l52fPxaBU1+ELn0omFp9zojjq2kt7IEgNsWeN39+xOn\navFlvprQtpH7GwSR9daJ/XaGVX+hIxN5GqLsDpvNN6m2uO2SOWbI159p/ffkmy7T\nYSi5vDGjAgMBAAECggEAAPgtYM/hpYSldzWR6UsJzP75D/sQsKjT3MjJtxjl6O3O\nVh26M4mT7drh1G0xUQhRwHrDqZCskiXF82QVh+nRkZerWBwvug5ZptPwgttBLw5j\nedltoNI1qvyzWl/YS2QPR5v/yDdlrofil6tfydleVAfCzRNPmMCdXWWkMTbb5wM2\n4U5pyqh92LsbJT34bBQ4tgj68cGFz3+enwMVn1cDssNZGLRrLEi3yWXwx4fKGYZg\nKWOd/33OV16M9xb5vuYqg8zoisTyh8MZqi0nb/smrBsuQiWSb4ozp+bbfz99PjUi\njcbMePI3F/qxJtWOMNRiXNR/rKx/ox0vCr0XWcfZQQKBgQDzQE8Kr5MEiJCqvTC/\nMoND+9OTE1+xcXVcHUkBWedND7qTVEf20ZZz2AQmH0vKHI6KY/AWmgpU3SLezbGa\nDQQ8M9X31ix7Ugi1Rg5KKUlcvxQeqkl53jhiHmFRI06Xz0LQzMVcm3YF10G+SnkP\nq4UKhSDPnFM1DZTE9UxEbIycYQKBgQDC8HZsnkdXB+k0Gv00ZrxMXFLa+lKeXcxJ\ndqbRaeYdSOlMydIZ7E2wbSbPf9ExQlVo9/XOj7tAqgSexpuFIde5AxqV3ugmbwV0\nkIR/lBa2yVkJFrq3ZmO++obzTWSUdEyo/Ww50TPMTLKmXYp711kpWjVQy0x8+L6l\nokYVqBesgwKBgAlFkD22B4KKugjoAS2ofTxgIuZePK2Ex5ZlP10f0iMr0E7BTaTo\nxDVSLIZPdxITGJPJz2LtKCun6iZX7McUa+7nguZZcYSZ0d8m9nB5NmSkm923W+mb\nQMbspYT0NZCvw7o1s+gdvNfoJodcS1T/kqid/mwrZziEdgEz4F5TTODBAoGBAJeg\nsnyKILNxU9NTqt+3iX9b0JbDXsAP9Xau89KvrG3a6Jzx3pqLU2KHhEiiAvVtw0GC\nnY+t/NivZiiaEx3a1RDzeRpZ5/j9IiEox+b0KTbEJp0LMPC2k59Y/t8As9tFGtvX\nQvc14jRm9A6zc6QgPRoNMKtHdpc+ZAwxzJHLzZ5BAoGBALu1Y+DycrX17DSpdhwg\njyKEppuqSy9n6ZWpuoRVsV0RIR6JxNhOWNniOkJ4XctmkmIc3llN2Ijjee4PWrGb\nBu69aB22kXgDD+OV6spBKbRN2IIWDNh8OkNPPKqq+sPIOgOx5iRktzxjLFBOqiHE\n0O4+yjAtyq11Hy2WkKHQyG4Y\n-----END PRIVATE KEY-----\n","client_email":"firebase-adminsdk-fbsvc@bet-mali-africa.iam.gserviceaccount.com","client_id":"113656776220916277501","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40bet-mali-africa.iam.gserviceaccount.com","universe_domain":"googleapis.com"}'
+
+[nix]
+channel = "stable-25_05"
