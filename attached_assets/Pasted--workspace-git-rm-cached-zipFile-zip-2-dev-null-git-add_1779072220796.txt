@@ -1,0 +1,88 @@
+~/workspace$ git rm --cached zipFile.zip 2>/dev/null; git add -A && git commit -m "Remove zip file and clean up" && git push --force origin main
+On branch main
+Your branch is ahead of 'origin/main' by 14 commits.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+~/workspace$ git filter-branch --force --index-filter "git rm --cached --ignore-unmatch zipFile.zip" --prune-empty --tag-name-filter cat -- --all && git push --force origin main
+WARNING: git-filter-branch has a glut of gotchas generating mangled history
+     rewrites.  Hit Ctrl-C before proceeding to abort, then use an
+     alternative filtering tool such as 'git filter-repo'
+     (https://github.com/newren/git-filter-repo/) instead.  See the
+     filter-branch manual page for more details; to squelch this warning,
+     set FILTER_BRANCH_SQUELCH_WARNING=1.
+Proceeding with filter-branch...
+
+Rewrite d8a137873ef2116ae0387a9ecad7adcdff081031 (8/28) (1 seconds passed, remaining 2 predicted)    rm 'zipFile.zip'
+Rewrite 69e9c8968c749d0f66d43876b4c19044f974c912 (8/28) (1 seconds passed, remaining 2 predicted)    rm 'zipFile.zip'
+Rewrite 1903658153ad8dd13c0399623637c63f7adf2a05 (8/28) (1 seconds passed, remaining 2 predicted)    rm 'zipFile.zip'
+Rewrite 2ac6aafe1d8f1795811af7b5e214aa9f7d4afd4d (8/28) (1 seconds passed, remaining 2 predicted)    rm 'zipFile.zip'
+Rewrite 0b31b60581c319e35916543fa9f5fe45baa5e260 (8/28) (1 seconds passed, remaining 2 predicted)    rm 'zipFile.zip'
+Rewrite b45e575e50478869ea94b5485b799a6d972067da (8/28) (1 seconds passed, remaining 2 predicted)    rm 'zipFile.zip'
+Rewrite 11cd9a9eb88762c1b1db22898447e435da875a01 (8/28) (1 seconds passed, remaining 2 predicted)    rm 'zipFile.zip'
+Rewrite 0ae733041aaf9f124b0bbc524b5468390ec1171e (8/28) (1 seconds passed, remaining 2 predicted)    rm 'zipFile.zip'
+Rewrite 30b2f1f342847cc0b7fefd3e6c5e8c4d3f79a764 (8/28) (1 seconds passed, remaining 2 predicted)    rm 'zipFile.zip'
+Rewrite c90370cbb7e8923658c423fcd03979b641000ca6 (17/28) (1 seconds passed, remaining 0 predicted)    rm 'zipFile.zip'
+Rewrite 208ea43c171ad564c467e569c25b16a2a3e24db2 (17/28) (1 seconds passed, remaining 0 predicted)    rm 'zipFile.zip'
+Rewrite 96917a2767d135912e0ee8f24b408fdf8ef2a773 (17/28) (1 seconds passed, remaining 0 predicted)    rm 'zipFile.zip'
+Rewrite 3d597fe591a4d71ff6c9f983b7efc6241c4cf253 (17/28) (1 seconds passed, remaining 0 predicted)    rm 'zipFile.zip'
+Rewrite 1ad4a2c622fa78b56a3ce089a5073a11a6c87577 (17/28) (1 seconds passed, remaining 0 predicted)    rm 'zipFile.zip'
+Rewrite 0e034f5cd902a8ab69971bb76b6e85cdf947bfaf (17/28) (1 seconds passed, remaining 0 predicted)    rm 'zipFile.zip'
+Rewrite 0b884ba0688e2e61e045a2d00e6e40ec860ff61e (17/28) (1 seconds passed, remaining 0 predicted)    rm 'zipFile.zip'
+Rewrite 80d69b6a74fe6a0aee136c452cfb1a83f6d1ae2b (17/28) (1 seconds passed, remaining 0 predicted)    rm 'zipFile.zip'
+Rewrite 186fb8e0cb5d80cc698d4259a9aa47e0c955a2b2 (17/28) (1 seconds passed, remaining 0 predicted)    rm 'zipFile.zip'
+Rewrite b6378011640d58540028e37968af5c5de17df1cc (17/28) (1 seconds passed, remaining 0 predicted)    rm 'zipFile.zip'
+Rewrite 95a0f12c5e692f4b45f142424eef82b342a8298e (17/28) (1 seconds passed, remaining 0 predicted)    rm 'zipFile.zip'
+Rewrite 5d55f7822b89084bffa38c18c960177f8a5e59c3 (17/28) (1 seconds passed, remaining 0 predicted)    
+Ref 'refs/heads/main' was rewritten
+Ref 'refs/heads/replit-agent' was rewritten
+Ref 'refs/remotes/gitsafe-backup/main' was rewritten
+Ref 'refs/remotes/origin/main' was rewritten
+WARNING: Ref 'refs/remotes/origin/main' is unchanged
+Ref 'refs/replit/agent-ledger' was rewritten
+Enumerating objects: 176, done.
+Counting objects: 100% (176/176), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (141/141), done.
+Writing objects: 100% (144/144), 59.15 KiB | 5.92 MiB/s, done.
+Total 144 (delta 101), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (101/101), completed with 23 local objects.
+remote: error: GH013: Repository rule violations found for refs/heads/main.
+remote: 
+remote: - GITHUB PUSH PROTECTION
+remote:   —————————————————————————————————————————
+remote:     Resolve the following violations before pushing again
+remote: 
+remote:     - Push cannot contain secrets
+remote: 
+remote:     
+remote:      (?) Learn how to resolve a blocked push
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push
+remote:     
+remote:      (?) This repository does not have Secret Scanning enabled, but is eligible. Enable Secret Scanning to view and manage detected secrets.
+remote:      Visit the repository settings page, https://github.com/betproglobalnexussystem-dotcom/Code-Clone-Masterzipaaaa/settings/security_analysis
+remote:     
+remote:     
+remote:       —— Google Cloud Service Account Credentials ——————————
+remote:        locations:
+remote:          - commit: 980e7cc2a60207cff495ae0532cce029dc8bb719
+remote:            path: attached_assets/bet-mali-africa-firebase-adminsdk-fbsvc-6df0d5a628_1779010895006.json:1
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/betproglobalnexussystem-dotcom/Code-Clone-Masterzipaaaa/security/secret-scanning/unblock-secret/3DrvwaMaRlmYV9626OFBO1dB19g
+remote:     
+remote:     
+remote:       —— Google Cloud Service Account Credentials ——————————
+remote:        locations:
+remote:          - commit: 980e7cc2a60207cff495ae0532cce029dc8bb719
+remote:            path: .replit:90
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/betproglobalnexussystem-dotcom/Code-Clone-Masterzipaaaa/security/secret-scanning/unblock-secret/3DrvwhAO47bj9uhNzbHWR9AGwPU
+remote:     
+remote: 
+remote: 
+To https://github.com/betproglobalnexussystem-dotcom/Code-Clone-Masterzipaaaa
+ ! [remote rejected] main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/betproglobalnexussystem-dotcom/Code-Clone-Masterzipaaaa'
+~/workspace$ 
