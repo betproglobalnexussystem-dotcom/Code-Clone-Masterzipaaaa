@@ -142,6 +142,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
   const [firestoreBanners, setFirestoreBanners] = useState<FirestoreBanner[]>([]);
   const [bannersLoaded, setBannersLoaded] = useState(false);
   const [jackpot, setJackpot] = useState(37_000_000);
+  const [displayJackpot, setDisplayJackpot] = useState(37_000_000);
   const [jackpotSub, setJackpotSub] = useState("Predict 13 games · Closes in 2h 34m");
   const [noticeText, setNoticeText] = useState("Welcome Bonus: 100% up to UGX 370,000 on your first deposit! \u00a0\u00a0\u00a0 Jackpot of UGX 37,000,000 this weekend! \u00a0\u00a0\u00a0 Withdraw via Mobile Money in under 5 minutes!");
   const unreadCount = useUnreadNotifCount();
@@ -166,11 +167,24 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
     const unsub = onSnapshot(doc(db, "settings", "jackpot"), (snap) => {
       if (snap.exists()) {
         const d = snap.data();
-        if (d.amount) setJackpot(d.amount);
+        if (d.amount) { setJackpot(d.amount); setDisplayJackpot(d.amount); }
         if (d.closesAt) setJackpotSub(d.closesAt);
       }
     }, () => {});
     return unsub;
+  }, []);
+
+  useEffect(() => {
+    const tick = () => {
+      const increment = Math.floor(Math.random() * 450) + 50;
+      setDisplayJackpot((prev) => prev + increment);
+    };
+    const scheduleNext = () => {
+      const delay = Math.floor(Math.random() * 2000) + 800;
+      return setTimeout(() => { tick(); timerId = scheduleNext(); }, delay);
+    };
+    let timerId = scheduleNext();
+    return () => clearTimeout(timerId);
   }, []);
 
   useEffect(() => {
@@ -362,7 +376,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
           <div className="jackpot-label"><Trophy size={13} /> MEGA JACKPOT</div>
           <div className="jackpot-amount" style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginRight: 2 }}>UGX</span>
-            <JackpotOdometer value={jackpot} fontSize={26} />
+            <JackpotOdometer value={displayJackpot} fontSize={26} />
           </div>
           <div className="jackpot-sub">{jackpotSub}</div>
         </div>
