@@ -225,7 +225,7 @@ export function getBoostedOdds(betMap: BetMap): { home: number; draw: number; aw
       const pick = Object.values(svMap)[0];
       return pick ? { tt: Number(tt), ov: pick.ov, s: pick.s } : null;
     })
-    .filter((x): x is { tt: number; ov: number; s: string } => x !== null && x.s === "U" && x.ov > 1)
+    .filter((x): x is { tt: number; ov: number; s: "U" | "L" } => x !== null && x.s === "U" && x.ov > 1)
     .sort((a, b) => a.tt - b.tt);
 
   if (entries.length >= 3) {

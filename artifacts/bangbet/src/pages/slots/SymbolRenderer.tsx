@@ -1,3 +1,5 @@
+import React from "react";
+
 interface SvgProps { size?: number }
 
 function Defs({ id, c1, c2, c3 }: { id: string; c1: string; c2: string; c3?: string }) {
@@ -710,7 +712,7 @@ export function VkScatter({ size = 56 }: SvgProps) {
 
 export type ThemeId = "pharaoh" | "dragon" | "viking";
 
-export function getSymbolSVG(symbolKey: string, themeId: ThemeId, size = 52): JSX.Element {
+export function getSymbolSVG(symbolKey: string, themeId: ThemeId, size = 52): React.JSX.Element {
   if (symbolKey === "A") return <SymA size={size} />;
   if (symbolKey === "K") return <SymK size={size} />;
   if (symbolKey === "Q") return <SymQ size={size} />;

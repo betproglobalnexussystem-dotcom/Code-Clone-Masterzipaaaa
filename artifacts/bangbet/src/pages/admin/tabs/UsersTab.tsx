@@ -145,7 +145,7 @@ function UserDetail({ user: initialUser, onBack }: { user: AdminUser; onBack: ()
               { label: "Phone", val: user.phone, icon: Phone },
               { label: "Country", val: user.country ?? "Uganda", icon: Globe },
               { label: "Device", val: user.device ?? "Web", icon: Monitor },
-              { label: "Joined", val: user.joinDate ?? user.joinedDate ?? "—", icon: CheckCircle },
+              { label: "Joined", val: user.joinDate ?? "—", icon: CheckCircle },
               { label: "Last Seen", val: user.lastSeen ?? "—", icon: Activity },
             ].map(row => (
               <div key={row.label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid #f8fafc" }}>

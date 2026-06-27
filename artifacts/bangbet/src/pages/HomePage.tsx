@@ -403,7 +403,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
           return (
             <div className="quick-nav-item" key={i} onClick={() => onNavigate("sport")}>
               <div className="quick-nav-icon">
-                {"iconUrl" in item ? <SportSvgIcon url={item.iconUrl} size={22} /> : Icon ? <Icon size={20} color="var(--text-muted)" /> : null}
+                {"iconUrl" in item ? <SportSvgIcon url={item.iconUrl!} size={22} /> : Icon ? <Icon size={20} color="var(--text-muted)" /> : null}
               </div>
               <span className="quick-nav-label">{item.label}</span>
             </div>

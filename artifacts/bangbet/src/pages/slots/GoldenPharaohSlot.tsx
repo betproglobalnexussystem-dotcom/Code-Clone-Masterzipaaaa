@@ -95,7 +95,7 @@ function doSpin(strips: string[][], bet: number, nonce: number) {
       for (let r = 0; r < 5; r++)
         for (let row = 0; row < 3; row++)
           if (grid[r][row] === "SCATTER") cells.push([r, row]);
-      wins.push({ cells, symbol: "SCATTER", count: scatterCount, payout: scatterWin });
+      wins.push({ cells, symbol: "SCATTER", count: scatterCount, payout: scatterWin, paylineIndex: -1 });
     }
   }
 
@@ -122,6 +122,7 @@ function doSpin(strips: string[][], bet: number, nonce: number) {
           symbol: sym,
           count: len,
           payout,
+          paylineIndex: -1,
         });
       }
     }
@@ -150,6 +151,7 @@ function doSpin(strips: string[][], bet: number, nonce: number) {
           symbol: sym,
           count: len,
           payout,
+          paylineIndex: -1,
         });
       }
     }
@@ -352,6 +354,7 @@ export default function GoldenPharaohSlot({ onBack }: { onBack: () => void }) {
       return () => clearTimeout(t);
     }
     if (autoCount === 0 && autoSpin) setAutoSpin(false);
+    return undefined;
   }, [spinning, autoSpin, autoCount, handleSpin]);
 
   const fmt = (n: number) => n >= 1_000_000 ? `${(n/1_000_000).toFixed(1)}M`

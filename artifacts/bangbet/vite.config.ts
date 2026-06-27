@@ -11,7 +11,6 @@ export default defineConfig({
   base: basePath,
   define: {
     __AI_BASE_URL__: JSON.stringify(process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || ""),
-    __AI_KEY__: JSON.stringify(process.env.AI_INTEGRATIONS_OPENAI_API_KEY || ""),
   },
   plugins: [
     react(),
