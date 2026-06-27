@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
+import DesktopSidebar from "./components/DesktopSidebar";
 import HomePage from "./pages/HomePage";
 import SportPage from "./pages/SportPage";
 import ResultsPage from "./pages/ResultsPage";
@@ -104,16 +105,35 @@ function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {
       <PendingPaymentRecovery />
       <ClientSettlement />
       <Header onLoginClick={openLogin} onRegisterClick={openRegister} onHomeClick={() => { setSelectedMatch(null); setActivePage("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
-      <main className="main-content">
-        {selectedMatch ? (
-          <MatchDetailsPage
-            match={selectedMatch}
-            onBack={handleBackFromMatch}
-            onAddBet={addBet}
-            betSelections={betSelections}
+
+      {/* Desktop layout: sidebar + main + betslip */}
+      <div className="desktop-body">
+        <DesktopSidebar
+          activePage={activePage}
+          setActivePage={(p) => { setSelectedMatch(null); setActivePage(p); }}
+        />
+        <main className="main-content">
+          {selectedMatch ? (
+            <MatchDetailsPage
+              match={selectedMatch}
+              onBack={handleBackFromMatch}
+              onAddBet={addBet}
+              betSelections={betSelections}
+            />
+          ) : renderPage()}
+        </main>
+        {/* Right betslip panel — always visible on desktop */}
+        <div className="desktop-right-panel">
+          <BetSlip
+            selections={betSelections}
+            onRemove={removeBet}
+            onClose={() => {}}
+            onBetPlaced={clearBets}
+            inline
           />
-        ) : renderPage()}
-      </main>
+        </div>
+      </div>
+
       <BottomNav
         activePage={selectedMatch ? activePage : activePage}
         setActivePage={(p) => { setSelectedMatch(null); setActivePage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
@@ -121,8 +141,11 @@ function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {
         onBetSlipClick={() => setShowBetSlip(true)}
       />
 
+      {/* Mobile betslip modal */}
       {showBetSlip && (
-        <BetSlip selections={betSelections} onRemove={removeBet} onClose={() => setShowBetSlip(false)} onBetPlaced={clearBets} />
+        <div className="mobile-betslip-modal">
+          <BetSlip selections={betSelections} onRemove={removeBet} onClose={() => setShowBetSlip(false)} onBetPlaced={clearBets} />
+        </div>
       )}
 
       {(showLogin || showRegister) && (

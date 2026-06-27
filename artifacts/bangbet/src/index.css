@@ -1409,7 +1409,210 @@ input, select, textarea { font-family: inherit; outline: none; }
   margin-top: 4px;
 }
 
-/* ===== RESPONSIVE ===== */
-@media (min-width: 480px) {
+/* ===== BASE RULES: hide desktop-only elements on mobile ===== */
+/* These are always in the DOM; CSS controls visibility by screen width */
+.desktop-sidebar      { display: none; }
+.desktop-right-panel  { display: none; }
+.desktop-body         { display: block; }   /* transparent wrapper on mobile */
+.mobile-betslip-modal { display: block; }   /* mobile betslip modal stays visible */
+
+/* ===== MOBILE (keep existing centered phone shell up to 1023px) ===== */
+@media (min-width: 480px) and (max-width: 1023px) {
   #root { box-shadow: 0 0 40px rgba(0,0,0,0.12); }
+}
+
+/* ===== DESKTOP (≥ 1024px) — full-screen layout ===== */
+@media (min-width: 1024px) {
+  /* Root fills the whole viewport */
+  #root {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    box-shadow: none;
+    background: #eef1ee;
+  }
+
+  /* Header spans full width */
+  .header {
+    max-width: none;
+    width: 100%;
+    left: 0;
+    transform: none;
+    height: 56px;
+    padding: 0 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  }
+
+  /* Hide mobile bottom nav on desktop */
+  .bottom-nav { display: none !important; }
+
+  /* Hide the mobile modal betslip wrapper */
+  .mobile-betslip-modal { display: none !important; }
+
+  /* Desktop body: three-column flex row below the fixed header */
+  .desktop-body {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    width: 100%;
+    min-height: calc(100vh - 56px);
+    margin-top: 56px;
+  }
+
+  /* Main scrollable area: remove mobile top/bottom padding */
+  .main-content {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    flex: 1;
+    min-width: 0;
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+    background: #f0f4f1;
+  }
+
+  /* ── LEFT SIDEBAR ── */
+  .desktop-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 220px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 56px);
+    position: sticky;
+    top: 56px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 16px;
+  }
+
+  .desktop-sidebar-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 14px 16px 6px;
+    font-family: 'Roboto', sans-serif;
+  }
+
+  .desktop-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-radius: 0;
+    transition: background 0.12s;
+    position: relative;
+    font-family: 'Roboto', sans-serif;
+  }
+
+  .desktop-sidebar-item:hover {
+    background: var(--green-light);
+  }
+
+  .desktop-sidebar-item.active {
+    background: var(--green-light);
+    border-left: 3px solid var(--green);
+  }
+
+  .desktop-sidebar-item-icon {
+    width: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .desktop-sidebar-item-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+  }
+
+  .desktop-sidebar-item.active .desktop-sidebar-item-label {
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  .desktop-sidebar-live-badge {
+    font-size: 9px;
+    font-weight: 800;
+    background: #e53935;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-family: 'Oswald', sans-serif;
+    letter-spacing: 0.5px;
+    animation: blink 1.4s infinite;
+  }
+
+  .desktop-sidebar-footer {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── RIGHT BETSLIP PANEL ── */
+  .desktop-right-panel {
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+    flex-shrink: 0;
+    background: #1c1e24;
+    border-left: 1px solid rgba(255,255,255,0.06);
+    height: calc(100vh - 56px);
+    position: sticky;
+    top: 56px;
+    overflow-y: auto;
+  }
+
+  /* Inline betslip — strip the mobile fixed-sheet styles */
+  .betslip-panel--inline {
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow-y: visible !important;
+    background: #1c1e24;
+    flex: 1;
+  }
+
+  /* Sticky header inside inline betslip */
+  .betslip-panel--inline .betslip-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #1c1e24;
+    border-color: rgba(255,255,255,0.08);
+    border-radius: 0;
+  }
+
+  /* Fix top-tabs sticky offset — no mobile bottom nav on desktop */
+  .top-tabs {
+    top: 56px;
+  }
+
+  .search-bar {
+    top: 56px;
+  }
+
+  /* Header height sync */
+  .main-content .top-tabs,
+  .main-content .search-bar {
+    top: 0;
+  }
+}
+
+/* ── WIDE DESKTOP (≥ 1400px): constrain center content width ── */
+@media (min-width: 1400px) {
+  .desktop-sidebar { width: 240px; }
+  .desktop-right-panel { width: 320px; }
 }

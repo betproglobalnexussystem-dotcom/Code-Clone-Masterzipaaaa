@@ -10,6 +10,7 @@ interface BetSlipProps {
   onRemove: (id: string) => void;
   onClose: () => void;
   onBetPlaced: () => void;
+  inline?: boolean;
 }
 
 const BONUS_TIERS = [
@@ -34,7 +35,7 @@ function nowString(): string {
   });
 }
 
-export default function BetSlip({ selections, onRemove, onClose, onBetPlaced }: BetSlipProps) {
+export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, inline = false }: BetSlipProps) {
   const { user } = useAuth();
   const [stake, setStake] = useState("3700");
   const [placing, setPlacing] = useState(false);
@@ -129,8 +130,8 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced }: 
 
   return (
     <>
-      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 140, backdropFilter: "blur(2px)" }} onClick={onClose} />
-      <div className="betslip-panel">
+      {!inline && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 140, backdropFilter: "blur(2px)" }} onClick={onClose} />}
+      <div className={inline ? "betslip-panel betslip-panel--inline" : "betslip-panel"}>
 
         <div className="betslip-header">
           <div className="betslip-title">
