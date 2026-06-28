@@ -129,19 +129,45 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
     }
   };
 
+  const c = inline ? {
+    headerPad: "9px 12px 8px", titleSize: 12, iconSize: 13 as const, closeSize: 12 as const,
+    badgePad: "1px 7px", badgeSize: 11,
+    bodyPad: "8px 10px", emptyPad: "24px 0", emptyIcon: 32 as const, emptySize: 11,
+    successPad: "24px 14px", successIcon: 28 as const, successSize: 16, successMsgSize: 11,
+    bannerPad: "6px 10px", bannerGap: 6, zapSize: 11 as const, bannerFontSize: 10, bannerNumSize: 11, bannerSubSize: 9,
+    selPad: "7px 9px", selMatchSize: 9, selPickSize: 11, selOddSize: 11, removeSize: 9 as const,
+    oddsPad: "7px 10px", oddsLabelSize: 9, oddsFontSize: 18, bonusPad: "4px 8px", bonusBadgeSize: 10, bonusPctSize: 13, bonusSubSize: 8,
+    stakePad: "8px 10px", stakeLabel: 10, stakeInputSize: 14, quickBtnSize: 10, quickBtnPad: "4px 2px",
+    balanceSize: 10,
+    summarySize: 11, potentialSize: 13, potentialPad: "6px 0 10px",
+    btnPad: "9px", btnFontSize: 12,
+  } : {
+    headerPad: "15px 16px 12px", titleSize: 15, iconSize: 17 as const, closeSize: 14 as const,
+    badgePad: "2px 10px", badgeSize: 13,
+    bodyPad: "12px 14px", emptyPad: "36px 0", emptyIcon: 44 as const, emptySize: 13,
+    successPad: "40px 20px", successIcon: 34 as const, successSize: 20, successMsgSize: 13,
+    bannerPad: "9px 14px", bannerGap: 8, zapSize: 14 as const, bannerFontSize: 11, bannerNumSize: 13, bannerSubSize: 10,
+    selPad: "11px 12px", selMatchSize: 11, selPickSize: 13, selOddSize: 13, removeSize: 11 as const,
+    oddsPad: "10px 14px", oddsLabelSize: 10, oddsFontSize: 26, bonusPad: "6px 12px", bonusBadgeSize: 12, bonusPctSize: 18, bonusSubSize: 9,
+    stakePad: "11px 12px", stakeLabel: 12, stakeInputSize: 18, quickBtnSize: 12, quickBtnPad: "6px 4px",
+    balanceSize: 11,
+    summarySize: 12, potentialSize: 15, potentialPad: "8px 0 14px",
+    btnPad: "13px", btnFontSize: 15,
+  };
+
   return (
     <>
       {!inline && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 140, backdropFilter: "blur(2px)" }} onClick={onClose} />}
       <div className={inline ? "betslip-panel betslip-panel--inline" : "betslip-panel"}>
 
-        <div className="betslip-header">
-          <div className="betslip-title">
-            <FileText size={17} />
+        <div className="betslip-header" style={{ padding: c.headerPad }}>
+          <div className="betslip-title" style={{ fontSize: c.titleSize }}>
+            <FileText size={c.iconSize} />
             BET SLIP
             {selections.length > 0 && (
               <span style={{
                 background: "var(--green)", color: "#fff",
-                fontSize: 13, fontWeight: 800, padding: "2px 10px",
+                fontSize: c.badgeSize, fontWeight: 800, padding: c.badgePad,
                 borderRadius: 12, fontFamily: "Oswald, sans-serif",
                 letterSpacing: 0.3, boxShadow: "0 2px 8px rgba(45,169,98,0.4)",
               }}>
@@ -149,75 +175,75 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
               </span>
             )}
           </div>
-          <div className="betslip-close" onClick={onClose}><X size={14} /></div>
+          <div className="betslip-close" onClick={onClose}><X size={c.closeSize} /></div>
         </div>
 
-        <div className="betslip-body">
+        <div className="betslip-body" style={{ padding: c.bodyPad }}>
           {selections.length === 0 ? (
-            <div className="betslip-empty">
-              <FileText size={44} />
+            <div className="betslip-empty" style={{ padding: c.emptyPad, fontSize: c.emptySize }}>
+              <FileText size={c.emptyIcon} />
               <div>Your bet slip is empty</div>
-              <div style={{ fontSize: 11, marginTop: 4 }}>Tap any odds to add selections</div>
+              <div style={{ fontSize: c.emptySize - 1, marginTop: 4 }}>Tap any odds to add selections</div>
             </div>
           ) : betSuccess ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", gap: 14 }}>
-              <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(45,169,98,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <CheckCircle size={34} color="#2DA962" />
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: c.successPad, gap: 10 }}>
+              <div style={{ width: inline ? 44 : 64, height: inline ? 44 : 64, borderRadius: "50%", background: "rgba(45,169,98,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <CheckCircle size={c.successIcon} color="#2DA962" />
               </div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: "Oswald, sans-serif" }}>BET PLACED!</div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", textAlign: "center" }}>
+              <div style={{ fontSize: c.successSize, fontWeight: 900, color: "var(--dark)", fontFamily: "Oswald, sans-serif" }}>BET PLACED!</div>
+              <div style={{ fontSize: c.successMsgSize, color: "var(--text-secondary)", textAlign: "center" }}>
                 Your bet of UGX {stakeNum.toLocaleString()} has been placed successfully.
               </div>
-              <div style={{ fontSize: 12, color: "#2DA962", fontWeight: 700 }}>Potential Win: UGX {Math.round(potential).toLocaleString()}</div>
+              <div style={{ fontSize: c.successMsgSize, color: "#2DA962", fontWeight: 700 }}>Potential Win: UGX {Math.round(potential).toLocaleString()}</div>
             </div>
           ) : (
             <>
               {next && (
-                <div style={{ background: "linear-gradient(90deg, #1a6e3d, #2DA962)", borderRadius: 12, padding: "9px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-                  <Zap size={14} color="#ffe60f" style={{ flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 11, color: "#fff", fontWeight: 700 }}>
-                      Add <span style={{ color: "#ffe60f", fontSize: 13 }}>{next.needed}</span> more to unlock{" "}
+                <div style={{ background: "linear-gradient(90deg, #1a6e3d, #2DA962)", borderRadius: 10, padding: c.bannerPad, marginBottom: 8, display: "flex", alignItems: "center", gap: c.bannerGap }}>
+                  <Zap size={c.zapSize} color="#ffe60f" style={{ flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: c.bannerFontSize, color: "#fff", fontWeight: 700, lineHeight: 1.3 }}>
+                      Add <span style={{ color: "#ffe60f", fontSize: c.bannerNumSize }}>{next.needed}</span> more to unlock{" "}
                       <span style={{ color: "#ffe60f", fontWeight: 800 }}>{next.pct}% Win Bonus!</span>
                     </div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.65)", marginTop: 2 }}>Bonus up to 500% on your winnings</div>
+                    <div style={{ fontSize: c.bannerSubSize, color: "rgba(255,255,255,0.65)", marginTop: 1 }}>Bonus up to 500% on your winnings</div>
                   </div>
-                  <ChevronRight size={14} color="rgba(255,255,255,0.5)" />
+                  <ChevronRight size={c.zapSize} color="rgba(255,255,255,0.5)" />
                 </div>
               )}
 
               {selections.map((sel) => (
-                <div key={sel.id} className="betslip-selection">
-                  <div className="betslip-sel-match">{sel.match}</div>
-                  <div className="betslip-sel-pick">{sel.pick}</div>
-                  <div className="betslip-sel-odd">{sel.odd.toFixed(2)}</div>
-                  <div className="betslip-remove" onClick={() => onRemove(sel.id)}><X size={11} /></div>
+                <div key={sel.id} className="betslip-selection" style={{ padding: c.selPad }}>
+                  <div className="betslip-sel-match" style={{ fontSize: c.selMatchSize }}>{sel.match}</div>
+                  <div className="betslip-sel-pick" style={{ fontSize: c.selPickSize }}>{sel.pick}</div>
+                  <div className="betslip-sel-odd" style={{ fontSize: c.selOddSize }}>{sel.odd.toFixed(2)}</div>
+                  <div className="betslip-remove" onClick={() => onRemove(sel.id)}><X size={c.removeSize} /></div>
                 </div>
               ))}
 
-              <div style={{ background: "#1c1e24", borderRadius: 12, padding: "10px 14px", margin: "10px 0", display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ background: "var(--bg-light)", border: "1px solid var(--border)", borderRadius: 10, padding: c.oddsPad, margin: "8px 0", display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontWeight: 600, letterSpacing: 0.4 }}>TOTAL ODDS</div>
-                  <div style={{ fontSize: 26, fontWeight: 800, color: "#ffe60f", fontFamily: "Oswald, sans-serif", lineHeight: 1.1 }}>{totalOdds.toFixed(2)}</div>
+                  <div style={{ fontSize: c.oddsLabelSize, color: "var(--text-muted)", fontWeight: 600, letterSpacing: 0.4 }}>TOTAL ODDS</div>
+                  <div style={{ fontSize: c.oddsFontSize, fontWeight: 800, color: "var(--green)", fontFamily: "Oswald, sans-serif", lineHeight: 1.1 }}>{totalOdds.toFixed(2)}</div>
                 </div>
                 {bonus > 0 && (
-                  <div style={{ background: "rgba(45,169,98,0.2)", border: "1px solid rgba(45,169,98,0.4)", borderRadius: 10, padding: "6px 12px", textAlign: "center" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <Gift size={12} color="#2DA962" />
-                      <span style={{ fontSize: 10, color: "#2DA962", fontWeight: 700, letterSpacing: 0.3 }}>WIN BONUS</span>
+                  <div style={{ background: "rgba(45,169,98,0.1)", border: "1px solid rgba(45,169,98,0.3)", borderRadius: 8, padding: c.bonusPad, textAlign: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                      <Gift size={c.bonusBadgeSize} color="#2DA962" />
+                      <span style={{ fontSize: c.oddsLabelSize, color: "#2DA962", fontWeight: 700, letterSpacing: 0.3 }}>WIN BONUS</span>
                     </div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: "#2DA962", fontFamily: "Oswald, sans-serif", lineHeight: 1.1 }}>{bonus}%</div>
-                    <div style={{ fontSize: 9, color: "rgba(45,169,98,0.7)", fontWeight: 600 }}>of 500%</div>
+                    <div style={{ fontSize: c.bonusPctSize, fontWeight: 800, color: "#2DA962", fontFamily: "Oswald, sans-serif", lineHeight: 1.1 }}>{bonus}%</div>
+                    <div style={{ fontSize: c.bonusSubSize, color: "rgba(45,169,98,0.7)", fontWeight: 600 }}>of 500%</div>
                   </div>
                 )}
               </div>
 
-              <div className="betslip-stake">
-                <div className="stake-label">STAKE (UGX)</div>
-                <input className="stake-input" type="number" value={stake} onChange={(e) => setStake(e.target.value)} placeholder="0" />
+              <div className="betslip-stake" style={{ padding: c.stakePad }}>
+                <div className="stake-label" style={{ fontSize: c.stakeLabel }}>STAKE (UGX)</div>
+                <input className="stake-input" type="number" value={stake} onChange={(e) => setStake(e.target.value)} placeholder="0" style={{ fontSize: c.stakeInputSize }} />
                 <div className="stake-quick-btns">
                   {["1000", "2000", "5000", "10000"].map((amt) => (
-                    <button key={amt} className="stake-quick-btn" onClick={() => setStake(p => String(parseFloat(p || "0") + parseFloat(amt)))}>
+                    <button key={amt} className="stake-quick-btn" onClick={() => setStake(p => String(parseFloat(p || "0") + parseFloat(amt)))} style={{ fontSize: c.quickBtnSize, padding: c.quickBtnPad }}>
                       +{Number(amt).toLocaleString()}
                     </button>
                   ))}
@@ -225,30 +251,30 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
               </div>
 
               {user && (
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 6, textAlign: "right" }}>
+                <div style={{ fontSize: c.balanceSize, color: "var(--text-muted)", marginBottom: 4, textAlign: "right" }}>
                   Balance: UGX {(user.balance ?? 0).toLocaleString()}
                 </div>
               )}
 
-              <div className="betslip-summary">
+              <div className="betslip-summary" style={{ fontSize: c.summarySize }}>
                 <span>Excise Tax (15%)</span>
                 <span className="betslip-summary-value">UGX {Math.round(tax).toLocaleString()}</span>
               </div>
               {bonus > 0 && (
-                <div className="betslip-summary">
+                <div className="betslip-summary" style={{ fontSize: c.summarySize }}>
                   <span style={{ color: "#2DA962" }}>Win Bonus ({bonus}%)</span>
                   <span style={{ color: "#2DA962", fontWeight: 700 }}>+ UGX {Math.round(bonusAmount).toLocaleString()}</span>
                 </div>
               )}
 
-              <div className="betslip-potential">
+              <div className="betslip-potential" style={{ fontSize: c.potentialSize, padding: c.potentialPad }}>
                 <span>POSSIBLE WIN</span>
                 <span className="betslip-potential-value">UGX {Math.round(potential).toLocaleString()}</span>
               </div>
 
               {betError && (
-                <div style={{ display: "flex", alignItems: "center", gap: 7, background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "9px 12px", marginBottom: 10, color: "#ef4444", fontSize: 12, fontWeight: 600 }}>
-                  <AlertCircle size={14} /> {betError}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, padding: inline ? "6px 9px" : "9px 12px", marginBottom: 8, color: "#ef4444", fontSize: c.summarySize, fontWeight: 600 }}>
+                  <AlertCircle size={inline ? 11 : 14} /> {betError}
                 </div>
               )}
 
@@ -256,9 +282,9 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
                 className="btn-place-bet"
                 onClick={handlePlaceBet}
                 disabled={placing}
-                style={{ opacity: placing ? 0.75 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                style={{ opacity: placing ? 0.75 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: c.btnPad, fontSize: c.btnFontSize }}
               >
-                {placing ? <><Loader size={16} style={{ animation: "spin 1s linear infinite" }} /> PLACING BET...</> : <><CheckCircle size={18} /> PLACE BET</>}
+                {placing ? <><Loader size={inline ? 13 : 16} style={{ animation: "spin 1s linear infinite" }} /> PLACING BET...</> : <><CheckCircle size={inline ? 13 : 18} /> PLACE BET</>}
               </button>
             </>
           )}
