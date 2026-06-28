@@ -45,7 +45,6 @@ function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {
   const closeModal = () => { setShowLogin(false); setShowRegister(false); };
 
   const addBet = (bet: BetSelection) => {
-    if (!user) { openLogin(); return; }
     setBetSelections((prev) => {
       const exists = prev.find((b) => b.id === bet.id);
       if (exists) return prev.filter((b) => b.id !== bet.id);
@@ -129,6 +128,7 @@ function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {
             onRemove={removeBet}
             onClose={() => {}}
             onBetPlaced={clearBets}
+            onOpenLogin={openLogin}
             inline
           />
         </div>

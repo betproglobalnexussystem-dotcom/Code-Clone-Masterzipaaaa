@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Globe, Shield, Search, Loader2, Zap } from "lucide-react";
 import type { BetSelection } from "../App";
+import MatchRow from "../components/MatchRow";
 import MatchCard, { type Match } from "../components/MatchCard";
 import { api, getOdds1X2, getBoostedOdds, formatKickOff, getLeagueFlagUrl, type ApiMatch, SPORTS } from "../lib/api";
 import StatsModal from "../components/StatsModal";
@@ -24,8 +25,6 @@ const SPORT_ICON_URLS: Record<string, string> = {
   V: "https://www.svgrepo.com/show/480340/volleyball-2.svg",
 };
 
-const SPORT_COLORS = ["#2DA962","#e65100","#1565c0","#6a1b9a","#c62828","#00838f","#37474f","#455a64","#2e7d32"];
-
 function SportIcon({ code, size = 18, active = false }: { code: string; size?: number; active?: boolean }) {
   const url = SPORT_ICON_URLS[code];
   if (url) {
@@ -42,11 +41,11 @@ function LeagueFlag({ leagueName }: { leagueName: string }) {
   const url = getLeagueFlagUrl(leagueName);
   if (url) {
     return (
-      <img src={url} alt="" style={{ width: 14, height: 10, objectFit: "cover", borderRadius: 2, flexShrink: 0, marginRight: 2 }}
+      <img src={url} alt="" style={{ width: 14, height: 10, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
         onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
     );
   }
-  return <Globe size={12} style={{ flexShrink: 0, opacity: 0.5, marginRight: 2 }} />;
+  return <Globe size={12} style={{ flexShrink: 0, opacity: 0.5 }} />;
 }
 
 function apiBoostedToMatch(m: ApiMatch): Match | null {
@@ -93,6 +92,43 @@ function apiMatchToMatch(m: ApiMatch): Match | null {
     sport: m.sport,
   };
 }
+
+function LeagueGroup({
+  league, matches, onAddBet, betSelections, onMatchClick, onStatsClick,
+}: {
+  league: string;
+  matches: Match[];
+  onAddBet: (bet: BetSelection) => void;
+  betSelections: BetSelection[];
+  onMatchClick: (match: Match) => void;
+  onStatsClick: (match: Match) => void;
+}) {
+  return (
+    <div className="league-group">
+      <div className="league-group-header">
+        <LeagueFlag leagueName={league} />
+        <span className="league-group-name">{league}</span>
+        <div className="league-group-col-labels">
+          <span className="league-group-col-label">1</span>
+          <span className="league-group-col-label">X</span>
+          <span className="league-group-col-label">2</span>
+        </div>
+        <span className="league-group-col-spacer" />
+      </div>
+      {matches.map((m) => (
+        <MatchRow
+          key={m.id}
+          match={m}
+          onAddBet={onAddBet}
+          betSelections={betSelections}
+          onMatchClick={onMatchClick}
+        />
+      ))}
+    </div>
+  );
+}
+
+const SPORT_COLORS = ["#2DA962","#e65100","#1565c0","#6a1b9a","#c62828","#00838f","#37474f","#455a64","#2e7d32"];
 
 export default function SportPage({ onAddBet, betSelections, onMatchClick, isLive }: SportPageProps) {
   const [activeSport, setActiveSport] = useState(0);
@@ -142,7 +178,6 @@ export default function SportPage({ onAddBet, betSelections, onMatchClick, isLiv
           if (match) parsed.push(match);
         });
 
-        // Sort by kickoff time ascending — live first, then by start time
         parsed.sort((a, b) => {
           if (a.isLive && !b.isLive) return -1;
           if (!a.isLive && b.isLive) return 1;
@@ -213,26 +248,39 @@ export default function SportPage({ onAddBet, betSelections, onMatchClick, isLiv
 
   const liveCount = allMatches.filter((m) => m.isLive).length;
 
+  // Group by league
+  const groupedByLeague: { league: string; matches: Match[] }[] = [];
+  if (activeLeague !== "All") {
+    groupedByLeague.push({ league: activeLeague, matches: filtered });
+  } else {
+    const leagueMap = new Map<string, Match[]>();
+    filtered.forEach((m) => {
+      if (!leagueMap.has(m.league)) leagueMap.set(m.league, []);
+      leagueMap.get(m.league)!.push(m);
+    });
+    leagueMap.forEach((matches, league) => groupedByLeague.push({ league, matches }));
+  }
+
   return (
     <div>
       {statsMatch && <StatsModal match={statsMatch} onClose={() => setStatsMatch(null)} />}
 
       {/* Sport tabs */}
-      <div style={{ display: "flex", gap: 0, overflowX: "auto", scrollbarWidth: "none", background: "#fff", borderBottom: "1px solid var(--border)" }}>
+      <div style={{ display: "flex", gap: 0, overflowX: "auto", scrollbarWidth: "none", background: "#1c1e24", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         {SPORTS.map(({ code, name }, i) => {
           const isActive = activeSport === i;
           const color = SPORT_COLORS[i] ?? "#555";
           return (
             <div key={code} onClick={() => setActiveSport(i)} style={{
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-              padding: "10px 14px", cursor: "pointer", flexShrink: 0,
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+              padding: "8px 12px", cursor: "pointer", flexShrink: 0,
               borderBottom: isActive ? `2px solid ${color}` : "2px solid transparent",
-              background: isActive ? `${color}10` : "transparent",
+              background: isActive ? `rgba(255,255,255,0.06)` : "transparent",
             }}>
-              <div style={{ width: 32, height: 32, borderRadius: 10, background: isActive ? color : "#f0f4f1", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>
-                <SportIcon code={code} size={18} active={isActive} />
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: isActive ? color : "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>
+                <SportIcon code={code} size={15} active={isActive} />
               </div>
-              <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500, color: isActive ? color : "var(--text-muted)", whiteSpace: "nowrap", fontFamily: "Oswald, sans-serif" }}>
+              <span style={{ fontSize: 9, fontWeight: isActive ? 700 : 500, color: isActive ? "#fff" : "rgba(255,255,255,0.45)", whiteSpace: "nowrap", fontFamily: "Oswald, sans-serif" }}>
                 {name}
               </span>
             </div>
@@ -241,51 +289,54 @@ export default function SportPage({ onAddBet, betSelections, onMatchClick, isLiv
       </div>
 
       {/* Search */}
-      <div className="search-bar">
-        <div className="search-input-wrap">
-          <Search size={15} className="search-icon" />
-          <input className="search-input" placeholder="Search teams or leagues..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+      <div style={{ padding: "7px 10px", background: "#1c1e24", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 18, display: "flex", alignItems: "center", gap: 7, padding: "6px 12px" }}>
+          <Search size={13} style={{ color: "rgba(255,255,255,0.35)", flexShrink: 0 }} />
+          <input
+            style={{ flex: 1, background: "none", border: "none", color: "#fff", fontSize: 12, outline: "none" }}
+            placeholder="Search teams or leagues..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
       </div>
 
-      {/* Live badge */}
-      {!loading && liveCount > 0 && (
-        <div style={{ padding: "6px 14px", background: "#fff", borderBottom: "1px solid var(--border2)" }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#e53935", color: "#fff", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 10, fontFamily: "Oswald, sans-serif" }}>
-            <span style={{ width: 6, height: 6, background: "#fff", borderRadius: "50%", animation: "blink 1s infinite", display: "inline-block" }} />
-            {liveCount} LIVE NOW
-          </span>
+      {/* Live badge + count */}
+      <div style={{ padding: "6px 10px", background: "#f0f4f1", borderBottom: "1px solid var(--border2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {!loading && liveCount > 0 && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#e53935", color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 8, fontFamily: "Oswald, sans-serif" }}>
+              <span style={{ width: 5, height: 5, background: "#fff", borderRadius: "50%", animation: "blink 1s infinite", display: "inline-block" }} />
+              {liveCount} LIVE
+            </span>
+          )}
+          {!loading && boostedMatches.length > 0 && !isLive && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(251,140,0,0.12)", color: "#fb8c00", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 8, fontFamily: "Oswald, sans-serif", border: "1px solid rgba(251,140,0,0.3)" }}>
+              <Zap size={10} fill="#fb8c00" />
+              {boostedMatches.length} BOOSTED
+            </span>
+          )}
         </div>
-      )}
+        <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{filtered.length} matches</span>
+      </div>
 
-      {/* League chips */}
-      <div className="leagues-list">
+      {/* League filter chips */}
+      <div className="leagues-list" style={{ background: "#fff", padding: "7px 8px" }}>
         {leagues.map((l) => (
           <div key={l} className={`league-chip ${activeLeague === l ? "active" : ""}`} onClick={() => setActiveLeague(l)}
-            style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+            style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, fontSize: 11, padding: "4px 11px" }}>
             {l !== "All" && <LeagueFlag leagueName={l} />}
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>{l}</span>
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 120 }}>{l}</span>
           </div>
         ))}
       </div>
 
-      {/* Results count */}
-      {!loading && (
-        <div style={{ padding: "6px 14px", background: "#f8f9f8", borderBottom: "1px solid var(--border2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>
-            {filtered.length} {isLive ? "live" : "upcoming"} matches
-          </span>
-          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Sorted by start time</span>
-        </div>
-      )}
-
-      {/* Boosted Odds Section */}
+      {/* Boosted odds as cards */}
       {!loading && boostedMatches.length > 0 && !isLive && (
         <>
-          <div style={{ padding: "10px 14px 6px", background: "#fff", borderBottom: "1px solid var(--border2)", display: "flex", alignItems: "center", gap: 7 }}>
-            <Zap size={14} style={{ color: "#fb8c00" }} fill="#fb8c00" />
-            <span style={{ fontSize: 13, fontWeight: 800, color: "#fb8c00", fontFamily: "Oswald, sans-serif", letterSpacing: 0.5 }}>BOOSTED ODDS</span>
-            <span style={{ fontSize: 10, background: "rgba(251,140,0,0.12)", color: "#fb8c00", fontWeight: 700, padding: "1px 7px", borderRadius: 8, fontFamily: "Oswald, sans-serif" }}>{boostedMatches.length}</span>
+          <div style={{ padding: "8px 10px 4px", background: "#fff", borderBottom: "1px solid var(--border2)", display: "flex", alignItems: "center", gap: 6 }}>
+            <Zap size={13} style={{ color: "#fb8c00" }} fill="#fb8c00" />
+            <span style={{ fontSize: 12, fontWeight: 800, color: "#fb8c00", fontFamily: "Oswald, sans-serif", letterSpacing: 0.5 }}>BOOSTED ODDS</span>
           </div>
           <div className="match-list">
             {boostedMatches.map((m) => (
@@ -296,26 +347,33 @@ export default function SportPage({ onAddBet, betSelections, onMatchClick, isLiv
         </>
       )}
 
-      {/* Matches */}
+      {/* Match list grouped by league */}
       {loading ? (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 40, gap: 10, color: "var(--text-muted)", background: "#fff" }}>
-          <Loader2 size={22} style={{ animation: "spin 1s linear infinite", color: "var(--green)" }} />
-          <span style={{ fontSize: 14 }}>Loading {sport.name} matches...</span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 36, gap: 10, color: "var(--text-muted)", background: "#fff" }}>
+          <Loader2 size={20} style={{ animation: "spin 1s linear infinite", color: "var(--green)" }} />
+          <span style={{ fontSize: 13 }}>Loading {sport.name} matches...</span>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ padding: "36px 14px", textAlign: "center", color: "var(--text-muted)", background: "#fff" }}>
+          <Shield size={32} style={{ marginBottom: 10, opacity: 0.3 }} />
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+            {isLive ? "No live matches right now" : "No matches found"}
+          </div>
+          <div style={{ fontSize: 11 }}>Try a different sport or check back later</div>
         </div>
       ) : (
-        <div className="match-list">
-          {filtered.map((m) => (
-            <MatchCard key={m.id} match={m} onAddBet={onAddBet} betSelections={betSelections} onMatchClick={onMatchClick} onStatsClick={setStatsMatch} />
+        <div>
+          {groupedByLeague.map(({ league, matches }) => (
+            <LeagueGroup
+              key={league}
+              league={league}
+              matches={matches}
+              onAddBet={onAddBet}
+              betSelections={betSelections}
+              onMatchClick={onMatchClick}
+              onStatsClick={setStatsMatch}
+            />
           ))}
-          {filtered.length === 0 && (
-            <div style={{ padding: "40px 14px", textAlign: "center", color: "var(--text-muted)", background: "#fff" }}>
-              <Shield size={36} style={{ marginBottom: 10, opacity: 0.3 }} />
-              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
-                {isLive ? "No live matches right now" : "No matches found"}
-              </div>
-              <div style={{ fontSize: 12 }}>Try a different sport or check back later</div>
-            </div>
-          )}
         </div>
       )}
 

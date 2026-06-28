@@ -10,6 +10,7 @@ interface BetSlipProps {
   onRemove: (id: string) => void;
   onClose: () => void;
   onBetPlaced: () => void;
+  onOpenLogin?: () => void;
   inline?: boolean;
 }
 
@@ -35,7 +36,7 @@ function nowString(): string {
   });
 }
 
-export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, inline = false }: BetSlipProps) {
+export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, onOpenLogin, inline = false }: BetSlipProps) {
   const { user } = useAuth();
   const [stake, setStake] = useState("3700");
   const [placing, setPlacing] = useState(false);
@@ -53,7 +54,7 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, in
 
   const handlePlaceBet = async () => {
     setBetError("");
-    if (!user) { setBetError("Please log in to place a bet."); return; }
+    if (!user) { onOpenLogin?.(); return; }
     if (stakeNum < 500) { setBetError("Minimum stake is UGX 500."); return; }
     if (stakeNum > user.balance) { setBetError("Insufficient balance."); return; }
     if (selections.length === 0) return;
