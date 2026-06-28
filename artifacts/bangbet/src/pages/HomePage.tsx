@@ -4,7 +4,7 @@ import type { BetSelection } from "../App";
 import type { Page } from "../App";
 import MatchCard, { type Match } from "../components/MatchCard";
 import MatchRow from "../components/MatchRow";
-import { api, getOdds1X2, getBoostedOdds, formatKickOff, getLeagueFlagUrl, type ApiMatch } from "../lib/api";
+import { api, getOdds1X2, getDoubleChance, getBoostedOdds, formatKickOff, getLeagueFlagUrl, type ApiMatch } from "../lib/api";
 import StatsModal from "../components/StatsModal";
 import { collection, query, orderBy, onSnapshot, doc } from "firebase/firestore";
 import { db } from "../lib/firebase";
@@ -79,6 +79,7 @@ function SportSvgIcon({ url, size = 22, inverted = false }: { url: string; size?
 function apiMatchToMatch(m: ApiMatch, opts?: { boosted?: boolean }): Match | null {
   const odds = getOdds1X2(m.betMap);
   if (!odds) return null;
+  const dc = getDoubleChance(m.betMap);
   return {
     id: String(m.id),
     apiId: m.id,
@@ -89,6 +90,7 @@ function apiMatchToMatch(m: ApiMatch, opts?: { boosted?: boolean }): Match | nul
     time: formatKickOff(m.kickOffTime),
     isLive: m.live === true && m.kickOffTime < Date.now(),
     odds,
+    doubleChance: dc ?? undefined,
     oddsCount: m.oddsCount,
     kickOffTime: m.kickOffTime,
     overUnder: m.params?.overUnder,
