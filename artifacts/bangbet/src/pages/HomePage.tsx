@@ -103,6 +103,7 @@ function apiMatchToMatch(m: ApiMatch, opts?: { boosted?: boolean }): Match | nul
 function apiBoostedToMatch(m: ApiMatch): Match | null {
   const odds = getBoostedOdds(m.betMap);
   if (!odds) return null;
+  const dc = getDoubleChance(m.betMap);
   return {
     id: `b-${m.id}`,
     apiId: m.id,
@@ -113,10 +114,32 @@ function apiBoostedToMatch(m: ApiMatch): Match | null {
     time: formatKickOff(m.kickOffTime),
     isLive: m.live === true && m.kickOffTime < Date.now(),
     odds,
+    doubleChance: dc ?? undefined,
     oddsCount: m.oddsCount,
     kickOffTime: m.kickOffTime,
     isBoosted: true,
   };
+}
+
+function OddsColHeaders({ hasDc }: { hasDc: boolean }) {
+  return (
+    <div className="league-group-header" style={{ background: "#f8f9fa", borderBottom: "1px solid var(--border2)", position: "static" }}>
+      <span style={{ flex: 1 }} />
+      <div className="league-group-col-labels">
+        <span className="league-group-col-label" style={{ color: "var(--text-muted)" }}>1</span>
+        <span className="league-group-col-label" style={{ color: "var(--text-muted)" }}>X</span>
+        <span className="league-group-col-label" style={{ color: "var(--text-muted)" }}>2</span>
+      </div>
+      {hasDc && (
+        <div className="league-group-col-labels league-group-dc-labels">
+          <span className="league-group-col-label" style={{ color: "rgba(45,169,98,0.7)" }}>1X</span>
+          <span className="league-group-col-label" style={{ color: "rgba(45,169,98,0.7)" }}>X2</span>
+          <span className="league-group-col-label" style={{ color: "rgba(45,169,98,0.7)" }}>12</span>
+        </div>
+      )}
+      <span className="league-group-col-spacer" />
+    </div>
+  );
 }
 
 
@@ -478,6 +501,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
                 View All <ChevronRight size={14} />
               </span>
             </div>
+            <OddsColHeaders hasDc={boostedMatches.some((m) => !!m.doubleChance)} />
             <div className="match-list">
               {boostedMatches.map((m) => (
                 <MatchRow key={m.id} match={m} onAddBet={onAddBet} betSelections={betSelections} onMatchClick={onMatchClick} />
@@ -513,6 +537,8 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
             <Loader2 size={18} style={{ animation: "spin 1s linear infinite", color: "var(--green)", display: "inline-block" }} />
           </div>
         ) : (
+          <>
+          <OddsColHeaders hasDc={filteredUpcoming.some((m) => !!m.doubleChance)} />
           <div className="match-list">
             {filteredUpcoming.map((m) => (
               <MatchRow key={m.id} match={m} onAddBet={onAddBet} betSelections={betSelections} onMatchClick={onMatchClick} />
@@ -523,6 +549,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
               </div>
             )}
           </div>
+          </>
         )}
       </div>
 
