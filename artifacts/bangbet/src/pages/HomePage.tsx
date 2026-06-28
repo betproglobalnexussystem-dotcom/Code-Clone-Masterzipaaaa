@@ -3,6 +3,7 @@ import { Bell, Globe, Gift, Zap, ChevronRight, Play, TrendingUp, Gamepad2, Loade
 import type { BetSelection } from "../App";
 import type { Page } from "../App";
 import MatchCard, { type Match } from "../components/MatchCard";
+import MatchRow from "../components/MatchRow";
 import { api, getOdds1X2, getBoostedOdds, formatKickOff, getLeagueFlagUrl, type ApiMatch } from "../lib/api";
 import StatsModal from "../components/StatsModal";
 import { collection, query, orderBy, onSnapshot, doc } from "firebase/firestore";
@@ -455,7 +456,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
             </div>
             <div className="match-list">
               {liveMatches.map((m) => (
-                <MatchCard key={m.id} match={m} onAddBet={onAddBet} betSelections={betSelections} onMatchClick={onMatchClick} onStatsClick={setStatsMatch} />
+                <MatchRow key={m.id} match={m} onAddBet={onAddBet} betSelections={betSelections} onMatchClick={onMatchClick} />
               ))}
             </div>
           </div>
@@ -477,7 +478,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
             </div>
             <div className="match-list">
               {boostedMatches.map((m) => (
-                <MatchCard key={m.id} match={m} onAddBet={onAddBet} betSelections={betSelections} onMatchClick={onMatchClick} onStatsClick={setStatsMatch} />
+                <MatchRow key={m.id} match={m} onAddBet={onAddBet} betSelections={betSelections} onMatchClick={onMatchClick} />
               ))}
             </div>
           </div>
@@ -512,7 +513,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
         ) : (
           <div className="match-list">
             {filteredUpcoming.map((m) => (
-              <MatchCard key={m.id} match={m} onAddBet={onAddBet} betSelections={betSelections} onMatchClick={onMatchClick} onStatsClick={setStatsMatch} />
+              <MatchRow key={m.id} match={m} onAddBet={onAddBet} betSelections={betSelections} onMatchClick={onMatchClick} />
             ))}
             {filteredUpcoming.length === 0 && (
               <div style={{ padding: "24px 14px", textAlign: "center", color: "var(--text-muted)", fontSize: 13, background: "#fff" }}>

@@ -1559,7 +1559,7 @@ input, select, textarea { font-family: inherit; outline: none; }
   .desktop-right-panel {
     display: flex;
     flex-direction: column;
-    width: 300px;
+    width: 220px;
     flex-shrink: 0;
     background: #ffffff;
     border-left: 1px solid var(--border);
@@ -1614,7 +1614,7 @@ input, select, textarea { font-family: inherit; outline: none; }
 /* ── WIDE DESKTOP (≥ 1400px): constrain center content width ── */
 @media (min-width: 1400px) {
   .desktop-sidebar { width: 240px; }
-  .desktop-right-panel { width: 320px; }
+  .desktop-right-panel { width: 240px; }
 }
 
 /* ===== COMPACT MATCH ROW (table-style) ===== */
