@@ -123,7 +123,7 @@ function apiBoostedToMatch(m: ApiMatch): Match | null {
 
 function OddsColHeaders({ hasDc }: { hasDc: boolean }) {
   return (
-    <div className="league-group-header" style={{ background: "#f8f9fa", borderBottom: "1px solid var(--border2)", position: "static" }}>
+    <div className="league-group-header home-odds-col-headers" style={{ background: "#f8f9fa", borderBottom: "1px solid var(--border2)", position: "static" }}>
       <span style={{ flex: 1 }} />
       <div className="league-group-col-labels">
         <span className="league-group-col-label" style={{ color: "var(--text-muted)" }}>1</span>

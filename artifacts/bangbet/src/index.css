@@ -1784,8 +1784,10 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 .league-group-dc-labels { display: none; }
 .match-row-dc-odds { display: none; }
+.home-odds-col-headers { display: none; }
 
 @media (min-width: 860px) {
+  .home-odds-col-headers { display: flex; }
   .league-group-dc-labels { display: flex; gap: 3px; flex-shrink: 0; }
   .match-row-dc-odds {
     display: flex;
