@@ -42,6 +42,13 @@ export default function MatchRow({ match, onAddBet, betSelections, onMatchClick 
     { label: "2", pick: `${match.awayTeam} Win`, odd: match.odds.away, key: "away" },
   ];
 
+  const dc = match.doubleChance;
+  const dcArr = dc ? [
+    { label: "1X", pick: `${match.homeTeam} or Draw`, odd: dc.oneX, key: "1x" },
+    { label: "X2", pick: `Draw or ${match.awayTeam}`, odd: dc.xTwo, key: "x2" },
+    { label: "12", pick: `${match.homeTeam} or ${match.awayTeam}`, odd: dc.oneTwo, key: "12" },
+  ] : [];
+
   const maxOdd = Math.max(...oddsArr.map((o) => o.odd));
 
   return (
@@ -83,6 +90,26 @@ export default function MatchRow({ match, onAddBet, betSelections, onMatchClick 
           );
         })}
       </div>
+
+      {dcArr.length > 0 && (
+        <div className="match-row-dc-odds" onClick={(e) => e.stopPropagation()}>
+          {dcArr.map(({ label, pick, odd, key }) => {
+            const sel = isSelected(key);
+            return (
+              <button
+                key={key}
+                className={`match-row-odd-btn match-row-dc-btn${sel ? " selected" : ""}`}
+                onClick={(e) => handleOdd(e, pick, odd, key)}
+                disabled={odd <= 1}
+                style={{ opacity: odd <= 1 ? 0.4 : 1 }}
+              >
+                <span className="match-row-odd-label">{label}</span>
+                <span className="match-row-odd-value">{odd > 1 ? odd.toFixed(2) : "-"}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="match-row-more" onClick={(e) => { e.stopPropagation(); onMatchClick?.(match); }}>
         <span>+{markets}</span>

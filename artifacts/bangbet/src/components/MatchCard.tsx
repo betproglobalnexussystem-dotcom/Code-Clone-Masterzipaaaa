@@ -10,6 +10,7 @@ export interface Match {
   time: string;
   isLive?: boolean;
   odds: { home: number; draw: number; away: number };
+  doubleChance?: { oneX: number; xTwo: number; oneTwo: number };
   oddsCount?: number;
   apiId?: number;
   brMatchId?: number;

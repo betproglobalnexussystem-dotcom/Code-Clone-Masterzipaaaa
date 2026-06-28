@@ -3,7 +3,7 @@ import { Globe, Shield, Search, Loader2, Zap } from "lucide-react";
 import type { BetSelection } from "../App";
 import MatchRow from "../components/MatchRow";
 import MatchCard, { type Match } from "../components/MatchCard";
-import { api, getOdds1X2, getBoostedOdds, formatKickOff, getLeagueFlagUrl, type ApiMatch, SPORTS } from "../lib/api";
+import { api, getOdds1X2, getDoubleChance, getBoostedOdds, formatKickOff, getLeagueFlagUrl, type ApiMatch, SPORTS } from "../lib/api";
 import StatsModal from "../components/StatsModal";
 
 const _sportCache: Record<string, { matches: Match[]; leagues: string[]; ready: boolean }> = {};
@@ -82,12 +82,14 @@ function apiMatchToMatch(m: ApiMatch): Match | null {
       sport: m.sport,
     };
   }
+  const dc = getDoubleChance(m.betMap);
   return {
     id: String(m.id), apiId: m.id, brMatchId: m.brMatchId,
     league: m.leagueName, homeTeam: m.home, awayTeam: m.away,
     time: formatKickOff(m.kickOffTime),
     isLive: m.live === true && m.kickOffTime < Date.now(),
-    odds, oddsCount: m.oddsCount, kickOffTime: m.kickOffTime,
+    odds, doubleChance: dc ?? undefined,
+    oddsCount: m.oddsCount, kickOffTime: m.kickOffTime,
     overUnder: m.params?.overUnder, leagueId: m.leagueId,
     sport: m.sport,
   };
@@ -113,6 +115,13 @@ function LeagueGroup({
           <span className="league-group-col-label">X</span>
           <span className="league-group-col-label">2</span>
         </div>
+        {matches[0]?.doubleChance && (
+          <div className="league-group-col-labels league-group-dc-labels">
+            <span className="league-group-col-label">1X</span>
+            <span className="league-group-col-label">X2</span>
+            <span className="league-group-col-label">12</span>
+          </div>
+        )}
         <span className="league-group-col-spacer" />
       </div>
       {matches.map((m) => (

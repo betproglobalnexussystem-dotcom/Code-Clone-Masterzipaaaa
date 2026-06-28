@@ -211,6 +211,14 @@ export const api = {
     ),
 };
 
+export function getDoubleChance(betMap: BetMap): { oneX: number; xTwo: number; oneTwo: number } | null {
+  const ox = betMap["4"]?.["NULL"]?.ov;
+  const xt = betMap["5"]?.["NULL"]?.ov;
+  const ot = betMap["6"]?.["NULL"]?.ov;
+  if (!ox && !xt && !ot) return null;
+  return { oneX: ox ?? 0, xTwo: xt ?? 0, oneTwo: ot ?? 0 };
+}
+
 export function getOdds1X2(betMap: BetMap): { home: number; draw: number; away: number } | null {
   const h = betMap["1"]?.["NULL"]?.ov;
   const d = betMap["2"]?.["NULL"]?.ov;

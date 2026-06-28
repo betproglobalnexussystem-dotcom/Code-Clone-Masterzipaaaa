@@ -49,6 +49,9 @@ export function resolveSelection(
   if (effectiveKey === "home") return ftScore.home > ftScore.away ? "won" : "lost";
   if (effectiveKey === "draw") return ftScore.home === ftScore.away ? "won" : "lost";
   if (effectiveKey === "away") return ftScore.away > ftScore.home ? "won" : "lost";
+  if (effectiveKey === "1x") return ftScore.home >= ftScore.away ? "won" : "lost";
+  if (effectiveKey === "x2") return ftScore.away >= ftScore.home ? "won" : "lost";
+  if (effectiveKey === "12") return ftScore.home !== ftScore.away ? "won" : "lost";
 
   if (tt === null) return resolveByText(p, ftScore, htScore, total);
 

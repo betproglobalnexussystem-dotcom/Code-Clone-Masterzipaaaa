@@ -1782,6 +1782,24 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 .league-group-col-spacer { width: 32px; flex-shrink: 0; }
 
+.league-group-dc-labels { display: none; }
+.match-row-dc-odds { display: none; }
+
+@media (min-width: 860px) {
+  .league-group-dc-labels { display: flex; gap: 3px; flex-shrink: 0; }
+  .match-row-dc-odds {
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+  .match-row-dc-btn {
+    background: rgba(45,169,98,0.05);
+    border-color: rgba(45,169,98,0.2);
+  }
+  .match-row-dc-btn:hover:not(:disabled) { border-color: var(--green); background: rgba(45,169,98,0.18); }
+  .match-row-dc-btn.selected { background: var(--green); border-color: var(--green-dark); }
+}
+
 /* ===== LIGHT SIDEBAR OVERRIDE ===== */
 @media (min-width: 1024px) {
   .desktop-sidebar {
