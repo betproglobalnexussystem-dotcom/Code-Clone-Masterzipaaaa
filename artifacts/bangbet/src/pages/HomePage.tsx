@@ -501,7 +501,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
                 View All <ChevronRight size={14} />
               </span>
             </div>
-            <OddsColHeaders hasDc={boostedMatches.some((m) => !!m.doubleChance)} />
+            <OddsColHeaders hasDc={true} />
             <div className="match-list">
               {boostedMatches.map((m) => (
                 <MatchRow key={m.id} match={m} onAddBet={onAddBet} betSelections={betSelections} onMatchClick={onMatchClick} />
