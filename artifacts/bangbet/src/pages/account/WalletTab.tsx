@@ -419,8 +419,8 @@ export default function WalletTab() {
 
       <div style={{ padding: "14px 14px 0" }}>
         <div style={{ background: "linear-gradient(135deg, #1a6e3d, #2DA962)", borderRadius: 16, padding: "18px 18px 14px", marginBottom: 10, boxShadow: "0 4px 18px rgba(45,169,98,0.35)" }}>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Main Balance</div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#fff", fontFamily: "Oswald, sans-serif", letterSpacing: 1 }}>UGX {(user?.balance || 0).toLocaleString()}</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>Total Balance</div>
+          <div style={{ fontSize: 30, fontWeight: 900, color: "#fff", fontFamily: "Oswald, sans-serif", letterSpacing: 1 }}>UGX {((user?.balance || 0) + (user?.bonus || 0)).toLocaleString()}</div>
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             <button onClick={() => setShowDeposit(true)} style={{ flex: 1, background: "#fff", color: "var(--green-dark)", fontWeight: 700, fontSize: 13, padding: "10px", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "Oswald, sans-serif", cursor: "pointer" }}>
               <CreditCard size={16} /> DEPOSIT

@@ -27,7 +27,7 @@ export default function Header({ onLoginClick, onRegisterClick, onHomeClick }: H
               <div>
                 <div style={{ fontSize: 10, color: "var(--text-muted)", lineHeight: 1 }}>Balance</div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "var(--green)", fontFamily: "Oswald, sans-serif", lineHeight: 1.3 }}>
-                  UGX {user.balance.toLocaleString()}
+                  UGX {(user.balance + (user.bonus ?? 0)).toLocaleString()}
                 </div>
               </div>
             </div>

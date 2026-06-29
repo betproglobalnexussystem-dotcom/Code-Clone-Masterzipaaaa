@@ -88,7 +88,7 @@ export default function ProfilePage({ onOpenLogin, onOpenRegister, onOpenAdmin }
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>Balance</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--green)", fontFamily: "Oswald, sans-serif" }}>UGX {user.balance.toLocaleString()}</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--green)", fontFamily: "Oswald, sans-serif" }}>UGX {(user.balance + (user.bonus ?? 0)).toLocaleString()}</div>
             </div>
             {user.phone.replace(/\s+/g, "") === ADMIN_PHONE && onOpenAdmin && (
               <button
