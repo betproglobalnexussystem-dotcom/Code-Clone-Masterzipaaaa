@@ -1516,7 +1516,7 @@ input, select, textarea { font-family: inherit; outline: none; }
     position: sticky;
     top: 56px;
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: visible;
     padding: 8px 6px 16px;
     gap: 4px;
   }
@@ -1862,7 +1862,6 @@ input, select, textarea { font-family: inherit; outline: none; }
   .dsb-nav-group {
     background: #fff;
     border-radius: 10px;
-    overflow: hidden;
     box-shadow: 0 1px 5px rgba(0,0,0,0.07);
     margin-bottom: 6px;
   }
@@ -1877,6 +1876,9 @@ input, select, textarea { font-family: inherit; outline: none; }
     border-left: 3px solid transparent;
   }
 
+  .dsb-nav-item:first-child { border-radius: 10px 10px 0 0; }
+  .dsb-nav-item:last-child  { border-radius: 0 0 10px 10px; }
+
   .dsb-nav-item:hover { background: var(--green-light); }
 
   .dsb-nav-item.active {
@@ -1890,6 +1892,9 @@ input, select, textarea { font-family: inherit; outline: none; }
     color: var(--text-primary);
     flex: 1;
     font-family: 'Roboto', sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .dsb-nav-item.active .dsb-nav-label {
@@ -1907,12 +1912,12 @@ input, select, textarea { font-family: inherit; outline: none; }
     font-family: 'Oswald', sans-serif;
     letter-spacing: 0.5px;
     animation: blink 1.4s infinite;
+    flex-shrink: 0;
   }
 
   .dsb-league-group {
     background: #fff;
     border-radius: 10px;
-    overflow: hidden;
     box-shadow: 0 1px 5px rgba(0,0,0,0.07);
     margin-bottom: 6px;
   }
@@ -1926,6 +1931,9 @@ input, select, textarea { font-family: inherit; outline: none; }
     transition: background 0.1s;
     border-left: 3px solid transparent;
   }
+
+  .dsb-league-item:first-child { border-radius: 10px 10px 0 0; }
+  .dsb-league-item:last-child  { border-radius: 0 0 10px 10px; }
 
   .dsb-league-item:hover {
     background: var(--green-light);
