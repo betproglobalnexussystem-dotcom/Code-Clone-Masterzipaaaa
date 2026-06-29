@@ -9,19 +9,21 @@ import {
   onAuthStateChanged,
   reauthenticateWithCredential,
   EmailAuthProvider,
+  sendPasswordResetEmail,
   type User as FirebaseUser,
 } from "firebase/auth";
 import {
   doc, getDoc, setDoc, updateDoc, addDoc, collection,
-  query, where, getDocs, orderBy, onSnapshot,
+  query, where, getDocs, onSnapshot,
   serverTimestamp, increment,
 } from "firebase/firestore";
-import { auth, db, phoneToEmail } from "../lib/firebase";
+import { auth, db } from "../lib/firebase";
 
 export interface User {
   uid: string;
   name: string;
   phone: string;
+  email: string;
   balance: number;
   bonus: number;
   winnings: number;
@@ -44,7 +46,7 @@ interface AuthContextType {
   loading: boolean;
   transactions: Transaction[];
   login: (phone: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (name: string, phone: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (firstName: string, lastName: string, phone: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   updateProfile: (updates: Partial<Pick<User, "name">>) => Promise<void>;
@@ -53,6 +55,7 @@ interface AuthContextType {
   claimReferral: (code: string) => Promise<{ success: boolean; error?: string }>;
   creditBalance: (amount: number, description: string) => Promise<void>;
   debitBalance: (amount: number, description: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -108,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           uid: firebaseUser.uid,
           name: data.name,
           phone: data.phone,
+          email: data.email ?? firebaseUser.email ?? "",
           balance: data.balance ?? 0,
           bonus: data.bonus ?? 0,
           winnings: data.winnings ?? 0,
@@ -148,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           uid: fbUser.uid,
           name: data.name,
           phone: data.phone,
+          email: data.email ?? fbUser.email ?? "",
           balance: data.balance ?? 0,
           bonus: data.bonus ?? 0,
           winnings: data.winnings ?? 0,
@@ -160,12 +165,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsub;
   }, [fbUser?.uid]);
 
+  // Login: look up email by phone in Firestore, then sign in with that email
   const login = async (phone: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const clean = phone.replace(/\s+/g, "");
     if (!clean) return { success: false, error: "Please enter your phone number." };
     if (!password) return { success: false, error: "Please enter your password." };
     try {
-      await signInWithEmailAndPassword(auth, phoneToEmail(clean), password);
+      const q = query(collection(db, "users"), where("phone", "==", clean));
+      const qs = await getDocs(q);
+      if (qs.empty) return { success: false, error: "No account found with this phone number." };
+      const userData = qs.docs[0].data();
+      const email = userData.email;
+      if (!email) return { success: false, error: "Account error. Please contact support." };
+      await signInWithEmailAndPassword(auth, email, password);
       return { success: true };
     } catch (err: any) {
       const code = err?.code ?? "";
@@ -176,21 +188,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (name: string, phone: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    const cleanName = name.trim();
+  const register = async (
+    firstName: string,
+    lastName: string,
+    phone: string,
+    email: string,
+    password: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    const cleanFirst = firstName.trim();
+    const cleanLast = lastName.trim();
     const clean = phone.replace(/\s+/g, "");
-    if (!cleanName) return { success: false, error: "Please enter your full name." };
-    if (!clean) return { success: false, error: "Please enter a phone number." };
-    if (clean.length < 9) return { success: false, error: "Please enter a valid phone number." };
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanFirst) return { success: false, error: "Please enter your first name." };
+    if (!cleanLast) return { success: false, error: "Please enter your last name." };
+    if (!clean || clean.length < 9) return { success: false, error: "Please enter a valid phone number." };
+    if (!cleanEmail || !cleanEmail.includes("@")) return { success: false, error: "Please enter a valid email address." };
     if (password.length < 6) return { success: false, error: "Password must be at least 6 characters." };
+
     try {
-      const cred = await createUserWithEmailAndPassword(auth, phoneToEmail(clean), password);
+      // Check phone not already used
+      const phoneQ = query(collection(db, "users"), where("phone", "==", clean));
+      const phoneSnap = await getDocs(phoneQ);
+      if (!phoneSnap.empty) return { success: false, error: "An account with this phone number already exists." };
+
+      const cred = await createUserWithEmailAndPassword(auth, cleanEmail, password);
       const uid = cred.user.uid;
+      const fullName = `${cleanFirst} ${cleanLast}`;
       const joinedDate = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
       const referralCode = genCode(clean);
+
       await setDoc(doc(db, "users", uid), {
-        name: cleanName,
+        name: fullName,
         phone: clean,
+        email: cleanEmail,
         balance: 0,
         bonus: 37000,
         winnings: 0,
@@ -212,17 +243,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         notifications: [],
         createdAt: serverTimestamp(),
       });
+
       await addTransaction(uid, {
         type: "bonus",
         amount: 37000,
         description: "Welcome Bonus credited",
         status: "completed",
       });
+
       return { success: true };
     } catch (err: any) {
       const code = err?.code ?? "";
       if (code === "auth/email-already-in-use") {
-        return { success: false, error: "An account with this phone number already exists." };
+        return { success: false, error: "An account with this email already exists." };
       }
       return { success: false, error: "Registration failed. Please try again." };
     }
@@ -232,12 +265,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
   };
 
+  const forgotPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes("@")) {
+      return { success: false, error: "Please enter a valid email address." };
+    }
+    try {
+      await sendPasswordResetEmail(auth, cleanEmail);
+      return { success: true };
+    } catch (err: any) {
+      const code = err?.code ?? "";
+      if (code === "auth/user-not-found") {
+        return { success: false, error: "No account found with this email address." };
+      }
+      return { success: false, error: "Failed to send reset email. Please try again." };
+    }
+  };
+
   const changePassword = async (currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
     if (!fbUser || !user) return { success: false, error: "Not logged in." };
     if (!currentPassword) return { success: false, error: "Please enter your current password." };
     if (newPassword.length < 6) return { success: false, error: "New password must be at least 6 characters." };
     try {
-      const cred = EmailAuthProvider.credential(phoneToEmail(user.phone), currentPassword);
+      const email = user.email || fbUser.email || "";
+      const cred = EmailAuthProvider.credential(email, currentPassword);
       await reauthenticateWithCredential(fbUser, cred);
       await updatePassword(fbUser, newPassword);
       return { success: true };
@@ -377,7 +428,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user, loading, transactions,
       login, register, logout, changePassword, updateProfile,
       deposit, withdraw, claimReferral,
-      creditBalance, debitBalance,
+      creditBalance, debitBalance, forgotPassword,
     }}>
       {children}
     </AuthContext.Provider>
