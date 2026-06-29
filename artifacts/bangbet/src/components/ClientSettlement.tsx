@@ -34,6 +34,7 @@ interface StoredBet {
   potentialWin: number;
   status: "pending" | "won" | "lost" | "cashed_out";
   date: string;
+  fromBonus?: boolean;
   selections: StoredSelection[];
 }
 

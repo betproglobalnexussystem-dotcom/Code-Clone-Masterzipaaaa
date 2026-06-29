@@ -208,14 +208,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await setDoc(doc(db, "users", uid), {
         name: fullName, phone: clean, email: cleanEmail,
-        balance: 0, bonus: 37000, winnings: 0, joinedDate, referralCode,
+        balance: 0, bonus: 500, winnings: 0, joinedDate, referralCode,
         usedReferrals: [], status: "active", riskLevel: "low",
         totalDeposited: 0, totalWithdrawn: 0, pendingBetAmount: 0,
         totalBets: 0, wonBets: 0, lostBets: 0, pendingBets: 0,
         country, device: "Web", lastSeen: nowString(),
         notifications: [], createdAt: serverTimestamp(),
       });
-      await addTransaction(uid, { type: "bonus", amount: 37000, description: "Welcome Bonus credited", status: "completed" });
+      await addTransaction(uid, { type: "bonus", amount: 500, description: "Welcome Bonus credited (betting only)", status: "completed" });
       return { success: true };
     } catch (err: any) {
       const code = err?.code ?? "";
@@ -271,14 +271,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await setDoc(doc(db, "users", currentUser.uid), {
         name: displayName, phone: fullPhone, email,
-        balance: 0, bonus: 37000, winnings: 0, joinedDate, referralCode,
+        balance: 0, bonus: 500, winnings: 0, joinedDate, referralCode,
         usedReferrals: [], status: "active", riskLevel: "low",
         totalDeposited: 0, totalWithdrawn: 0, pendingBetAmount: 0,
         totalBets: 0, wonBets: 0, lostBets: 0, pendingBets: 0,
         country: countryName, device: "Web", lastSeen: nowString(),
         notifications: [], createdAt: serverTimestamp(), loginMethod: "google",
       });
-      await addTransaction(currentUser.uid, { type: "bonus", amount: 37000, description: "Welcome Bonus credited", status: "completed" });
+      await addTransaction(currentUser.uid, { type: "bonus", amount: 500, description: "Welcome Bonus credited (betting only)", status: "completed" });
       return { success: true };
     } catch {
       return { success: false, error: "Failed to save your phone number. Please try again." };

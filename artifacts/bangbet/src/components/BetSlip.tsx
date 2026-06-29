@@ -56,8 +56,14 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
     setBetError("");
     if (!user) { onOpenLogin?.(); return; }
     if (stakeNum < 500) { setBetError("Minimum stake is UGX 500."); return; }
-    if (stakeNum > user.balance) { setBetError("Insufficient balance."); return; }
+    const realBalance = user.balance ?? 0;
+    const bonusBalance = user.bonus ?? 0;
+    const totalAvailable = realBalance + bonusBalance;
+    if (stakeNum > totalAvailable) { setBetError("Insufficient balance."); return; }
     if (selections.length === 0) return;
+
+    // Use bonus only when real balance is not enough
+    const useBonus = stakeNum > realBalance;
 
     setPlacing(true);
     try {
@@ -77,6 +83,7 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
         date: now,
         selectionsCount: selections.length,
         type: betType,
+        fromBonus: useBonus,
         selections: selections.map(s => ({
           id: s.id,
           match: s.match,
@@ -97,7 +104,7 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
       });
 
       await updateDoc(doc(db, "users", user.uid), {
-        balance: increment(-stakeNum),
+        ...(useBonus ? { bonus: increment(-stakeNum) } : { balance: increment(-stakeNum) }),
         totalBets: increment(1),
         pendingBets: increment(1),
         pendingBetAmount: increment(stakeNum),
@@ -251,8 +258,13 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
               </div>
 
               {user && (
-                <div style={{ fontSize: c.balanceSize, color: "var(--text-muted)", marginBottom: 4, textAlign: "right" }}>
-                  Balance: UGX {(user.balance ?? 0).toLocaleString()}
+                <div style={{ fontSize: c.balanceSize, color: "var(--text-muted)", marginBottom: 4, textAlign: "right", display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                  <span>Balance: UGX {(user.balance ?? 0).toLocaleString()}</span>
+                  {(user.bonus ?? 0) > 0 && (
+                    <span style={{ color: "#2DA962", fontWeight: 700 }}>
+                      Bonus: UGX {(user.bonus ?? 0).toLocaleString()}
+                    </span>
+                  )}
                 </div>
               )}
 
