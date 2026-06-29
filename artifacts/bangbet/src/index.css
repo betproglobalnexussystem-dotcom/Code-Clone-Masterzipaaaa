@@ -944,62 +944,58 @@ input, select, textarea { font-family: inherit; outline: none; }
   background: rgba(0,0,0,0.55);
   z-index: 200;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  padding: 16px;
 }
 
 .modal-content {
   width: 100%;
-  max-width: 480px;
+  max-width: 340px;
   background: #fff;
-  border-radius: 20px 20px 0 0;
-  padding: 20px 18px 36px;
+  border-radius: 14px;
+  padding: 18px 16px 16px;
   max-height: 92vh;
   overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
 }
 
-.modal-handle {
-  width: 36px;
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
-  margin: 0 auto 22px;
-}
+.modal-handle { display: none; }
 
 .modal-title {
   font-family: 'Oswald', sans-serif;
-  font-size: 24px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--dark);
   text-align: center;
-  margin-bottom: 22px;
+  margin-bottom: 14px;
   letter-spacing: 0.5px;
 }
 
 .modal-title .highlight { color: var(--green); }
 
-.form-group { margin-bottom: 14px; }
+.form-group { margin-bottom: 9px; }
 
 .form-label {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
+  gap: 4px;
+  font-size: 11px;
   color: var(--text-secondary);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   font-weight: 500;
 }
 
-.form-label svg { width: 13px; height: 13px; color: var(--text-muted); }
+.form-label svg { width: 11px; height: 11px; color: var(--text-muted); }
 
 .form-input {
   width: 100%;
   background: var(--bg-light);
   border: 1.5px solid var(--border);
   color: var(--text-primary);
-  border-radius: 12px;
-  padding: 11px 14px;
-  font-size: 14px;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 12.5px;
   font-weight: 400;
   transition: border-color 0.2s;
 }

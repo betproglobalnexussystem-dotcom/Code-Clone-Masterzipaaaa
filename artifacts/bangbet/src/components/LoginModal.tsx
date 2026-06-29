@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Phone, Lock, User, LogIn, UserPlus, Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
+import { Phone, Lock, User, LogIn, UserPlus, Eye, EyeOff, AlertCircle, CheckCircle, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 interface LoginModalProps {
@@ -53,39 +53,41 @@ export default function LoginModal({ mode, onClose, onSwitchMode, onForgotPasswo
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-content">
-        <div className="modal-handle" />
-
-        <div style={{ height: 4, background: "var(--yellow)", borderRadius: 2, marginBottom: 20 }} />
-
-        <div className="modal-title">
-          {mode === "login" ? (
-            <>WELCOME <span className="highlight">BACK</span></>
-          ) : (
-            <>CREATE <span className="highlight">ACCOUNT</span></>
-          )}
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <div style={{ width: 28, height: 3, background: "var(--yellow)", borderRadius: 2 }} />
+          <div className="modal-title" style={{ margin: 0 }}>
+            {mode === "login" ? <>WELCOME <span className="highlight">BACK</span></> : <>CREATE <span className="highlight">ACCOUNT</span></>}
+          </div>
+          <button
+            onClick={onClose}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 2, display: "flex", borderRadius: 6 }}
+          >
+            <X size={15} />
+          </button>
         </div>
 
         {error && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#ffeaea", border: "1px solid #ffb3b3", borderRadius: 10, padding: "10px 12px", marginBottom: 14, color: "#c62828", fontSize: 13, fontWeight: 600 }}>
-            <AlertCircle size={16} style={{ flexShrink: 0 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#ffeaea", border: "1px solid #ffb3b3", borderRadius: 7, padding: "7px 10px", marginBottom: 9, color: "#c62828", fontSize: 11.5, fontWeight: 600 }}>
+            <AlertCircle size={13} style={{ flexShrink: 0 }} />
             {error}
           </div>
         )}
 
         {success && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#e8f5e9", border: "1px solid #a5d6a7", borderRadius: 10, padding: "10px 12px", marginBottom: 14, color: "#2e7d32", fontSize: 13, fontWeight: 600 }}>
-            <CheckCircle size={16} style={{ flexShrink: 0 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#e8f5e9", border: "1px solid #a5d6a7", borderRadius: 7, padding: "7px 10px", marginBottom: 9, color: "#2e7d32", fontSize: 11.5, fontWeight: 600 }}>
+            <CheckCircle size={13} style={{ flexShrink: 0 }} />
             {success}
           </div>
         )}
 
         {mode === "register" && (
           <div className="form-group">
-            <label className="form-label"><User size={13} /> Full Name</label>
+            <label className="form-label"><User size={11} /> Full Name</label>
             <input
               className="form-input"
               type="text"
-              placeholder="Enter your full name"
+              placeholder="Your full name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -95,7 +97,7 @@ export default function LoginModal({ mode, onClose, onSwitchMode, onForgotPasswo
         )}
 
         <div className="form-group">
-          <label className="form-label"><Phone size={13} /> Phone Number</label>
+          <label className="form-label"><Phone size={11} /> Phone Number</label>
           <input
             className="form-input"
             type="tel"
@@ -109,36 +111,33 @@ export default function LoginModal({ mode, onClose, onSwitchMode, onForgotPasswo
 
         <div className="form-group">
           <label className="form-label">
-            <Lock size={13} /> Password{" "}
-            {mode === "register" && <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(min. 6 characters)</span>}
+            <Lock size={11} /> Password
+            {mode === "register" && <span style={{ color: "var(--text-muted)", fontWeight: 400 }}> (min. 6 chars)</span>}
           </label>
           <div style={{ position: "relative" }}>
             <input
               className="form-input"
               type={showPassword ? "text" : "password"}
-              placeholder={mode === "register" ? "Create a strong password" : "Enter your password"}
+              placeholder={mode === "register" ? "Create a password" : "Your password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={handleKeyDown}
               autoComplete={mode === "login" ? "current-password" : "new-password"}
-              style={{ paddingRight: 44 }}
+              style={{ paddingRight: 36 }}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 0, display: "flex" }}
+              style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 0, display: "flex" }}
             >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
           </div>
         </div>
 
         {mode === "login" && (
-          <div style={{ textAlign: "right", marginBottom: 14 }}>
-            <span
-              style={{ fontSize: 12, color: "var(--green)", cursor: "pointer", fontWeight: 600 }}
-              onClick={onForgotPassword}
-            >
+          <div style={{ textAlign: "right", marginBottom: 10 }}>
+            <span style={{ fontSize: 11, color: "var(--green)", cursor: "pointer", fontWeight: 600 }} onClick={onForgotPassword}>
               Forgot password?
             </span>
           </div>
@@ -148,20 +147,20 @@ export default function LoginModal({ mode, onClose, onSwitchMode, onForgotPasswo
           className="btn-primary"
           onClick={handleSubmit}
           disabled={loading}
-          style={{ opacity: loading ? 0.75 : 1 }}
+          style={{ opacity: loading ? 0.75 : 1, fontSize: 13, padding: "9px 14px", marginTop: 2 }}
         >
-          {loading ? "Please wait..." : mode === "login" ? <><LogIn size={17} /> LOGIN</> : <><UserPlus size={17} /> CREATE ACCOUNT</>}
+          {loading ? "Please wait..." : mode === "login" ? <><LogIn size={14} /> LOGIN</> : <><UserPlus size={14} /> CREATE ACCOUNT</>}
         </button>
 
-        <p className="modal-footer-text">
+        <p style={{ fontSize: 11, color: "var(--text-secondary)", textAlign: "center", marginTop: 10, marginBottom: 0 }}>
           {mode === "login" ? "New to BetMali? " : "Already have an account? "}
-          <span className="modal-footer-link" onClick={onSwitchMode}>
-            {mode === "login" ? "Register Now" : "Login"}
+          <span style={{ color: "var(--green)", fontWeight: 700, cursor: "pointer" }} onClick={onSwitchMode}>
+            {mode === "login" ? "Register" : "Login"}
           </span>
         </p>
 
-        <p style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "center", marginTop: 14, lineHeight: 1.6 }}>
-          By registering you confirm you are 18+ and accept our Terms &amp; Conditions.
+        <p style={{ fontSize: 10, color: "var(--text-muted)", textAlign: "center", marginTop: 7, lineHeight: 1.5 }}>
+          18+ only · Terms & Conditions apply
         </p>
       </div>
     </div>
