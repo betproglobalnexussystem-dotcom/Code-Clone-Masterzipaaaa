@@ -31,6 +31,7 @@ export interface User {
   joinedDate: string;
   referralCode: string;
   status: "active" | "suspended" | "banned";
+  fridayFreeBetWeek?: string;
 }
 
 export interface Transaction {
@@ -104,6 +105,7 @@ function buildUser(uid: string, data: Record<string, any>, fbEmail?: string | nu
     joinedDate: data.joinedDate ?? "",
     referralCode: data.referralCode ?? "",
     status: data.status ?? "active",
+    fridayFreeBetWeek: data.fridayFreeBetWeek ?? "",
   };
 }
 
@@ -159,7 +161,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!local) return { success: false, error: "Please enter your phone number." };
     if (!password) return { success: false, error: "Please enter your password." };
 
-    // Build candidates: try international format first, then local
     const intl = dialCode ? dialCode + local.replace(/^0/, "") : null;
     const candidates = [...new Set([intl, local].filter(Boolean) as string[])];
 
@@ -214,6 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         totalBets: 0, wonBets: 0, lostBets: 0, pendingBets: 0,
         country, device: "Web", lastSeen: nowString(),
         notifications: [], createdAt: serverTimestamp(),
+        pendingReferrerId: "", fridayFreeBetWeek: "",
       });
       await addTransaction(uid, { type: "bonus", amount: 500, description: "Welcome Bonus credited (betting only)", status: "completed" });
       return { success: true };
@@ -232,23 +234,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const snap = await getDoc(doc(db, "users", fbU.uid));
 
       if (snap.exists() && snap.data().phone) {
-        // Returning Google user — already has a profile
         setUser(buildUser(fbU.uid, snap.data(), fbU.email));
         return { success: true, needsPhone: false };
       }
 
-      // New Google user — need phone number
       return { success: true, needsPhone: true };
     } catch (err: any) {
       const code = err?.code ?? "";
       if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
-        return { success: false, error: "" }; // silent — user closed popup
+        return { success: false, error: "" };
       }
       return { success: false, error: "Google sign-in failed. Please try again." };
     }
   };
 
-  // Complete signup for Google users who need to add a phone number
   const completeGoogleSignup = async (phone: string, dialCode: string, countryName = "Uganda"): Promise<{ success: boolean; error?: string }> => {
     const currentUser = auth.currentUser;
     if (!currentUser) return { success: false, error: "Session expired. Please try again." };
@@ -259,7 +258,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!localPhone || localPhone.length < 7) return { success: false, error: "Please enter a valid phone number." };
 
     try {
-      // Check phone not already used
       const phoneQ = query(collection(db, "users"), where("phone", "==", fullPhone));
       const phoneSnap = await getDocs(phoneQ);
       if (!phoneSnap.empty) return { success: false, error: "This phone number is already linked to another account." };
@@ -277,6 +275,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         totalBets: 0, wonBets: 0, lostBets: 0, pendingBets: 0,
         country: countryName, device: "Web", lastSeen: nowString(),
         notifications: [], createdAt: serverTimestamp(), loginMethod: "google",
+        pendingReferrerId: "", fridayFreeBetWeek: "",
       });
       await addTransaction(currentUser.uid, { type: "bonus", amount: 500, description: "Welcome Bonus credited (betting only)", status: "completed" });
       return { success: true };
@@ -330,8 +329,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (amount < 1000) return { success: false, error: "Minimum deposit is UGX 1,000." };
     if (amount > 10000000) return { success: false, error: "Maximum deposit is UGX 10,000,000." };
     try {
-      await updateDoc(doc(db, "users", fbUser.uid), { balance: increment(amount), totalDeposited: increment(amount), lastSeen: nowString() });
+      // Check if this is the user's first deposit and they have a pending referral
+      const userSnap = await getDoc(doc(db, "users", fbUser.uid));
+      const userData = userSnap.data();
+      const isFirstDeposit = (userData?.totalDeposited ?? 0) === 0;
+      const pendingReferrerId: string = userData?.pendingReferrerId ?? "";
+
+      await updateDoc(doc(db, "users", fbUser.uid), {
+        balance: increment(amount),
+        totalDeposited: increment(amount),
+        lastSeen: nowString(),
+        ...(isFirstDeposit && pendingReferrerId ? { pendingReferrerId: "" } : {}),
+      });
       await addTransaction(fbUser.uid, { type: "deposit", amount, description: `Deposit via ${method}`, status: "completed" });
+
+      // Pay referrer UGX 500 bonus on referred user's first deposit
+      if (isFirstDeposit && pendingReferrerId) {
+        await updateDoc(doc(db, "users", pendingReferrerId), { bonus: increment(500) });
+        await addTransaction(pendingReferrerId, {
+          type: "referral",
+          amount: 500,
+          description: "Referral bonus — your friend made their first deposit!",
+          status: "completed",
+        });
+      }
+
       return { success: true };
     } catch { return { success: false, error: "Deposit failed. Please try again." }; }
   };
@@ -360,6 +382,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await addTransaction(fbUser.uid, { type: "withdraw", amount, description, status: "completed" });
   };
 
+  // claimReferral — stores pending referral; bonus paid only on first deposit
   const claimReferral = async (code: string): Promise<{ success: boolean; error?: string }> => {
     if (!fbUser || !user) return { success: false, error: "Not logged in." };
     const cleaned = code.trim().toUpperCase();
@@ -370,14 +393,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!myData) return { success: false, error: "Account not found." };
       const used: string[] = myData.usedReferrals ?? [];
       if (used.includes(cleaned)) return { success: false, error: "You have already used this referral code." };
+      if (myData.pendingReferrerId) return { success: false, error: "You have already entered a referral code." };
+
       const q = query(collection(db, "users"), where("referralCode", "==", cleaned));
       const qs = await getDocs(q);
       if (qs.empty) return { success: false, error: "Invalid referral code. Please check and try again." };
       const referrerDoc = qs.docs[0];
-      await updateDoc(doc(db, "users", fbUser.uid), { bonus: increment(500), usedReferrals: [...used, cleaned] });
-      await updateDoc(doc(db, "users", referrerDoc.id), { bonus: increment(500) });
-      await addTransaction(fbUser.uid, { type: "referral", amount: 500, description: `Referral bonus from code ${cleaned}`, status: "completed" });
-      await addTransaction(referrerDoc.id, { type: "referral", amount: 500, description: "Referral bonus — friend joined", status: "completed" });
+
+      // If user has already deposited, pay out immediately; otherwise queue for first deposit
+      const alreadyDeposited = (myData.totalDeposited ?? 0) > 0;
+      if (alreadyDeposited) {
+        await updateDoc(doc(db, "users", referrerDoc.id), { bonus: increment(500) });
+        await addTransaction(referrerDoc.id, {
+          type: "referral", amount: 500,
+          description: "Referral bonus — your friend joined and deposited!",
+          status: "completed",
+        });
+      }
+
+      await updateDoc(doc(db, "users", fbUser.uid), {
+        usedReferrals: [...used, cleaned],
+        pendingReferrerId: alreadyDeposited ? "" : referrerDoc.id,
+      });
+
       return { success: true };
     } catch { return { success: false, error: "Could not process referral. Please try again." }; }
   };

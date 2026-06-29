@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, X, CheckCircle, Zap, Gift, ChevronRight, AlertCircle, Loader } from "lucide-react";
+import { FileText, X, CheckCircle, Zap, Gift, ChevronRight, AlertCircle, Loader, Ticket } from "lucide-react";
 import { addDoc, collection, serverTimestamp, updateDoc, doc, increment } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
@@ -21,6 +21,8 @@ const BONUS_TIERS = [
   { at: 13, pct: 200 }, { at: 14, pct: 300 }, { at: 15, pct: 500 },
 ];
 
+const FREE_BET_AMOUNT = 1000;
+
 function currentBonus(count: number) {
   return [...BONUS_TIERS].reverse().find(t => count >= t.at)?.pct ?? 0;
 }
@@ -36,12 +38,19 @@ function nowString(): string {
   });
 }
 
+/** Returns a unique key per Friday, e.g. "fri-2026-06-26" */
+function getFridayKey(): string {
+  const d = new Date();
+  return `fri-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, onOpenLogin, inline = false }: BetSlipProps) {
   const { user } = useAuth();
   const [stake, setStake] = useState("3700");
   const [placing, setPlacing] = useState(false);
   const [betError, setBetError] = useState("");
   const [betSuccess, setBetSuccess] = useState(false);
+  const [freeBetSuccess, setFreeBetSuccess] = useState(false);
 
   const totalOdds = selections.reduce((acc, s) => acc * s.odd, 1);
   const stakeNum = parseFloat(stake) || 0;
@@ -51,6 +60,12 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
   const bonusAmount = rawProfit * (bonus / 100);
   const potential = stakeNum + rawProfit + bonusAmount;
   const next = nextBonusInfo(selections.length);
+
+  // Friday free bet availability
+  const isFriday = new Date().getDay() === 5;
+  const fridayKey = getFridayKey();
+  const freeBetAvailable = isFriday && !!user && (user.fridayFreeBetWeek ?? "") !== fridayKey;
+  const freeBetPotential = Math.round(FREE_BET_AMOUNT * totalOdds);
 
   const handlePlaceBet = async () => {
     setBetError("");
@@ -62,7 +77,6 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
     if (stakeNum > totalAvailable) { setBetError("Insufficient balance."); return; }
     if (selections.length === 0) return;
 
-    // Use bonus only when real balance is not enough
     const useBonus = stakeNum > realBalance;
 
     setPlacing(true);
@@ -84,6 +98,7 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
         selectionsCount: selections.length,
         type: betType,
         fromBonus: useBonus,
+        isFreebet: false,
         selections: selections.map(s => ({
           id: s.id,
           match: s.match,
@@ -136,6 +151,86 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
     }
   };
 
+  const handleFreeBet = async () => {
+    setBetError("");
+    if (!user) { onOpenLogin?.(); return; }
+    if (!isFriday) { setBetError("Friday Free Bet is only available on Fridays."); return; }
+    if (!freeBetAvailable) { setBetError("You have already used your Friday Free Bet this week."); return; }
+    if (selections.length === 0) return;
+
+    setPlacing(true);
+    try {
+      const ticketId = Date.now().toString() + Math.floor(Math.random() * 10000);
+      const betType = selections.length === 1 ? "Single" : "Accumulator";
+      const now = nowString();
+
+      await addDoc(collection(db, "bets"), {
+        userId: user.uid,
+        userName: user.name,
+        userPhone: user.phone,
+        ticketId,
+        stake: FREE_BET_AMOUNT,
+        totalOdds: parseFloat(totalOdds.toFixed(2)),
+        potentialWin: freeBetPotential,
+        status: "pending",
+        date: now,
+        selectionsCount: selections.length,
+        type: betType,
+        fromBonus: false,
+        isFreebet: true,
+        selections: selections.map(s => ({
+          id: s.id,
+          match: s.match,
+          pick: s.pick,
+          odd: s.odd,
+          status: "pending",
+          score: null,
+          time: "TBD",
+          matchId: s.matchId ?? null,
+          kickOffTime: s.kickOffTime ?? null,
+          sport: s.sport ?? null,
+          marketKey: s.marketKey ?? null,
+        })),
+        tax: 0,
+        bonusPct: 0,
+        bonusAmount: 0,
+        createdAt: serverTimestamp(),
+      });
+
+      // Mark free bet used, update bet counters — no balance deduction
+      await updateDoc(doc(db, "users", user.uid), {
+        fridayFreeBetWeek: fridayKey,
+        totalBets: increment(1),
+        pendingBets: increment(1),
+        pendingBetAmount: increment(FREE_BET_AMOUNT),
+        lastSeen: now,
+      });
+
+      await addDoc(collection(db, "transactions"), {
+        userId: user.uid,
+        userName: user.name,
+        type: "bet",
+        amount: FREE_BET_AMOUNT,
+        description: `Friday Free Bet — ${betType} (${selections.length} sel, ${totalOdds.toFixed(2)}x)`,
+        method: "Free Bet",
+        ref: "FB-" + ticketId,
+        status: "completed",
+        date: now,
+        createdAt: serverTimestamp(),
+      });
+
+      setFreeBetSuccess(true);
+      setTimeout(() => {
+        setFreeBetSuccess(false);
+        onBetPlaced();
+      }, 1800);
+    } catch {
+      setBetError("Failed to place free bet. Please try again.");
+    } finally {
+      setPlacing(false);
+    }
+  };
+
   const c = inline ? {
     headerPad: "9px 12px 8px", titleSize: 12, iconSize: 13 as const, closeSize: 12 as const,
     badgePad: "1px 7px", badgeSize: 11,
@@ -161,6 +256,8 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
     summarySize: 12, potentialSize: 15, potentialPad: "8px 0 14px",
     btnPad: "13px", btnFontSize: 15,
   };
+
+  const isSuccess = betSuccess || freeBetSuccess;
 
   return (
     <>
@@ -192,16 +289,22 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
               <div>Your bet slip is empty</div>
               <div style={{ fontSize: c.emptySize - 1, marginTop: 4 }}>Tap any odds to add selections</div>
             </div>
-          ) : betSuccess ? (
+          ) : isSuccess ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: c.successPad, gap: 10 }}>
-              <div style={{ width: inline ? 44 : 64, height: inline ? 44 : 64, borderRadius: "50%", background: "rgba(45,169,98,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <CheckCircle size={c.successIcon} color="#2DA962" />
+              <div style={{ width: inline ? 44 : 64, height: inline ? 44 : 64, borderRadius: "50%", background: freeBetSuccess ? "rgba(245,158,11,0.15)" : "rgba(45,169,98,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <CheckCircle size={c.successIcon} color={freeBetSuccess ? "#f59e0b" : "#2DA962"} />
               </div>
-              <div style={{ fontSize: c.successSize, fontWeight: 900, color: "var(--dark)", fontFamily: "Oswald, sans-serif" }}>BET PLACED!</div>
+              <div style={{ fontSize: c.successSize, fontWeight: 900, color: "var(--dark)", fontFamily: "Oswald, sans-serif" }}>
+                {freeBetSuccess ? "FREE BET PLACED!" : "BET PLACED!"}
+              </div>
               <div style={{ fontSize: c.successMsgSize, color: "var(--text-secondary)", textAlign: "center" }}>
-                Your bet of UGX {stakeNum.toLocaleString()} has been placed successfully.
+                {freeBetSuccess
+                  ? `Your Friday Free Bet of UGX ${FREE_BET_AMOUNT.toLocaleString()} has been placed!`
+                  : `Your bet of UGX ${stakeNum.toLocaleString()} has been placed successfully.`}
               </div>
-              <div style={{ fontSize: c.successMsgSize, color: "#2DA962", fontWeight: 700 }}>Potential Win: UGX {Math.round(potential).toLocaleString()}</div>
+              <div style={{ fontSize: c.successMsgSize, color: freeBetSuccess ? "#f59e0b" : "#2DA962", fontWeight: 700 }}>
+                Potential Win: UGX {(freeBetSuccess ? freeBetPotential : Math.round(potential)).toLocaleString()}
+              </div>
             </div>
           ) : (
             <>
@@ -216,6 +319,28 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
                     <div style={{ fontSize: c.bannerSubSize, color: "rgba(255,255,255,0.65)", marginTop: 1 }}>Bonus up to 500% on your winnings</div>
                   </div>
                   <ChevronRight size={c.zapSize} color="rgba(255,255,255,0.5)" />
+                </div>
+              )}
+
+              {/* Friday Free Bet banner */}
+              {isFriday && user && (
+                <div style={{
+                  background: freeBetAvailable
+                    ? "linear-gradient(90deg, #92400e, #f59e0b)"
+                    : "rgba(156,163,175,0.15)",
+                  borderRadius: 10, padding: c.bannerPad, marginBottom: 8,
+                  display: "flex", alignItems: "center", gap: c.bannerGap,
+                  border: freeBetAvailable ? "none" : "1px solid var(--border)",
+                }}>
+                  <Ticket size={c.zapSize} color={freeBetAvailable ? "#fff" : "var(--text-muted)"} style={{ flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: c.bannerFontSize, color: freeBetAvailable ? "#fff" : "var(--text-muted)", fontWeight: 700, lineHeight: 1.3 }}>
+                      🎁 Friday Free Bet — UGX 1,000
+                    </div>
+                    <div style={{ fontSize: c.bannerSubSize, color: freeBetAvailable ? "rgba(255,255,255,0.8)" : "var(--text-muted)", marginTop: 1 }}>
+                      {freeBetAvailable ? "Place 1 free bet today, no balance needed!" : "Already used this week"}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -290,14 +415,40 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
                 </div>
               )}
 
-              <button
-                className="btn-place-bet"
-                onClick={handlePlaceBet}
-                disabled={placing}
-                style={{ opacity: placing ? 0.75 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: c.btnPad, fontSize: c.btnFontSize }}
-              >
-                {placing ? <><Loader size={inline ? 13 : 16} style={{ animation: "spin 1s linear infinite" }} /> PLACING BET...</> : <><CheckCircle size={inline ? 13 : 18} /> PLACE BET</>}
-              </button>
+              {/* Place Bet + Friday Free Bet buttons */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <button
+                  className="btn-place-bet"
+                  onClick={handlePlaceBet}
+                  disabled={placing}
+                  style={{ opacity: placing ? 0.75 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: c.btnPad, fontSize: c.btnFontSize }}
+                >
+                  {placing ? <><Loader size={inline ? 13 : 16} style={{ animation: "spin 1s linear infinite" }} /> PLACING BET...</> : <><CheckCircle size={inline ? 13 : 18} /> PLACE BET</>}
+                </button>
+
+                {isFriday && user && (
+                  <button
+                    onClick={handleFreeBet}
+                    disabled={placing || !freeBetAvailable}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                      padding: c.btnPad, fontSize: c.btnFontSize,
+                      background: freeBetAvailable ? "linear-gradient(90deg, #92400e, #f59e0b)" : "rgba(156,163,175,0.2)",
+                      color: freeBetAvailable ? "#fff" : "var(--text-muted)",
+                      border: "none", borderRadius: 10, fontWeight: 800,
+                      fontFamily: "Oswald, sans-serif", letterSpacing: 0.5,
+                      cursor: freeBetAvailable && !placing ? "pointer" : "not-allowed",
+                      opacity: placing ? 0.75 : 1,
+                      transition: "opacity 0.2s",
+                    }}
+                  >
+                    <Ticket size={inline ? 13 : 18} />
+                    {freeBetAvailable
+                      ? `USE FREE BET — UGX ${FREE_BET_AMOUNT.toLocaleString()}`
+                      : "FREE BET USED THIS FRIDAY"}
+                  </button>
+                )}
+              </div>
             </>
           )}
         </div>
