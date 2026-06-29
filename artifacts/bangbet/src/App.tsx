@@ -40,6 +40,11 @@ function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {
   const [betSelections, setBetSelections] = useState<BetSelection[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
+  // Shared sport/league state — controlled by sidebar on desktop, by tabs on mobile
+  const [activeSportIndex, setActiveSportIndex] = useState(0);
+  const [activeLeague, setActiveLeague] = useState("All");
+  const [sportLeagues, setSportLeagues] = useState<string[]>([]);
+
   const openLogin = () => { setShowRegister(false); setShowLogin(true); };
   const openRegister = () => { setShowLogin(false); setShowRegister(true); };
   const closeModal = () => { setShowLogin(false); setShowRegister(false); };
@@ -63,6 +68,21 @@ function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleSidebarSportChange = (idx: number) => {
+    setActiveSportIndex(idx);
+    setActiveLeague("All");
+    setSelectedMatch(null);
+    setActivePage("sport");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSidebarLeagueChange = (league: string) => {
+    setActiveLeague(league);
+    setSelectedMatch(null);
+    setActivePage("sport");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const renderPage = () => {
     switch (activePage) {
       case "home":
@@ -77,7 +97,19 @@ function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {
         );
       case "sport":
       case "live":
-        return <SportPage onAddBet={addBet} betSelections={betSelections} onMatchClick={handleMatchClick} isLive={activePage === "live"} />;
+        return (
+          <SportPage
+            onAddBet={addBet}
+            betSelections={betSelections}
+            onMatchClick={handleMatchClick}
+            isLive={activePage === "live"}
+            activeSportIndex={activeSportIndex}
+            onSportIndexChange={(idx) => { setActiveSportIndex(idx); setActiveLeague("All"); }}
+            activeLeague={activeLeague}
+            onLeagueChange={setActiveLeague}
+            onLeaguesLoaded={setSportLeagues}
+          />
+        );
       case "results":
         return <ResultsPage />;
       case "promotions":
@@ -110,6 +142,11 @@ function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {
         <DesktopSidebar
           activePage={activePage}
           setActivePage={(p) => { setSelectedMatch(null); setActivePage(p); }}
+          activeSportIndex={activeSportIndex}
+          onSportChange={handleSidebarSportChange}
+          sportLeagues={sportLeagues}
+          activeLeague={activeLeague}
+          onLeagueChange={handleSidebarLeagueChange}
         />
         <main className="main-content">
           {selectedMatch ? (

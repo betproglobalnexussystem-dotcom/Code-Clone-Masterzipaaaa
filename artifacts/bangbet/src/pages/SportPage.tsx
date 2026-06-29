@@ -13,6 +13,12 @@ interface SportPageProps {
   betSelections: BetSelection[];
   onMatchClick: (match: Match) => void;
   isLive?: boolean;
+  // Controlled by parent (lifted state — shared with sidebar on desktop)
+  activeSportIndex: number;
+  onSportIndexChange: (idx: number) => void;
+  activeLeague: string;
+  onLeagueChange: (league: string) => void;
+  onLeaguesLoaded: (leagues: string[]) => void;
 }
 
 const SPORT_ICON_URLS: Record<string, string> = {
@@ -139,29 +145,32 @@ function LeagueGroup({
 
 const SPORT_COLORS = ["#2DA962","#e65100","#1565c0","#6a1b9a","#c62828","#00838f","#37474f","#455a64","#2e7d32"];
 
-export default function SportPage({ onAddBet, betSelections, onMatchClick, isLive }: SportPageProps) {
-  const [activeSport, setActiveSport] = useState(0);
+export default function SportPage({
+  onAddBet, betSelections, onMatchClick, isLive,
+  activeSportIndex, onSportIndexChange,
+  activeLeague, onLeagueChange,
+  onLeaguesLoaded,
+}: SportPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [allMatches, setAllMatches] = useState<Match[]>(() => _sportCache["S"]?.matches ?? []);
   const [boostedMatches, setBoostedMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(() => !(_sportCache["S"]?.ready));
-  const [statsMatch, setStatsMatch] = useState<Match | null>(null);
-  const [activeLeague, setActiveLeague] = useState("All");
   const [leagues, setLeagues] = useState<string[]>(() => _sportCache["S"]?.leagues ?? ["All"]);
+  const [statsMatch, setStatsMatch] = useState<Match | null>(null);
 
-  const sport = SPORTS[activeSport] ?? SPORTS[0];
+  const sport = SPORTS[activeSportIndex] ?? SPORTS[0];
 
   useEffect(() => {
     const cached = _sportCache[sport.code];
     if (cached?.ready) {
       setAllMatches(cached.matches);
       setLeagues(cached.leagues);
+      onLeaguesLoaded(cached.leagues);
       setLoading(false);
     } else {
       setLoading(true);
       setAllMatches([]);
     }
-    setActiveLeague("All");
 
     async function load() {
       try {
@@ -197,6 +206,7 @@ export default function SportPage({ onAddBet, betSelections, onMatchClick, isLiv
         _sportCache[sport.code] = { matches: parsed, leagues: newLeagues, ready: true };
         setAllMatches(parsed);
         setLeagues(newLeagues);
+        onLeaguesLoaded(newLeagues);
 
         api.boostedMatches(sport.code).then((resp) => {
           const boosted: Match[] = [];
@@ -216,7 +226,7 @@ export default function SportPage({ onAddBet, betSelections, onMatchClick, isLiv
 
     setBoostedMatches([]);
     load();
-  }, [activeSport, isLive]);
+  }, [activeSportIndex, isLive]);
 
   useEffect(() => {
     const silentRefresh = async () => {
@@ -257,7 +267,6 @@ export default function SportPage({ onAddBet, betSelections, onMatchClick, isLiv
 
   const liveCount = allMatches.filter((m) => m.isLive).length;
 
-  // Group by league
   const groupedByLeague: { league: string; matches: Match[] }[] = [];
   if (activeLeague !== "All") {
     groupedByLeague.push({ league: activeLeague, matches: filtered });
@@ -274,13 +283,13 @@ export default function SportPage({ onAddBet, betSelections, onMatchClick, isLiv
     <div>
       {statsMatch && <StatsModal match={statsMatch} onClose={() => setStatsMatch(null)} />}
 
-      {/* Sport tabs */}
-      <div style={{ display: "flex", gap: 0, overflowX: "auto", scrollbarWidth: "none", background: "#1c1e24", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      {/* Sport tabs — hidden on desktop (sidebar handles it) */}
+      <div className="sport-tabs-bar">
         {SPORTS.map(({ code, name }, i) => {
-          const isActive = activeSport === i;
+          const isActive = activeSportIndex === i;
           const color = SPORT_COLORS[i] ?? "#555";
           return (
-            <div key={code} onClick={() => setActiveSport(i)} style={{
+            <div key={code} onClick={() => { onSportIndexChange(i); onLeagueChange("All"); }} style={{
               display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
               padding: "8px 12px", cursor: "pointer", flexShrink: 0,
               borderBottom: isActive ? `2px solid ${color}` : "2px solid transparent",
@@ -325,14 +334,16 @@ export default function SportPage({ onAddBet, betSelections, onMatchClick, isLiv
               {boostedMatches.length} BOOSTED
             </span>
           )}
+          {/* Sport name shown on desktop (tabs hidden) */}
+          <span className="sport-page-desktop-title">{sport.name}</span>
         </div>
         <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{filtered.length} matches</span>
       </div>
 
-      {/* League filter chips */}
-      <div className="leagues-list" style={{ background: "#fff", padding: "7px 8px" }}>
+      {/* League filter chips — hidden on desktop (sidebar handles it) */}
+      <div className="sport-league-chips leagues-list" style={{ background: "#fff", padding: "7px 8px" }}>
         {leagues.map((l) => (
-          <div key={l} className={`league-chip ${activeLeague === l ? "active" : ""}`} onClick={() => setActiveLeague(l)}
+          <div key={l} className={`league-chip ${activeLeague === l ? "active" : ""}`} onClick={() => onLeagueChange(l)}
             style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, fontSize: 11, padding: "4px 11px" }}>
             {l !== "All" && <LeagueFlag leagueName={l} />}
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 120 }}>{l}</span>

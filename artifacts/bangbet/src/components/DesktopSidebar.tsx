@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { Trophy, Radio, ClipboardList, Tag, User, Home, Gamepad2, ChevronDown, ChevronUp, Globe } from "lucide-react";
 import type { Page } from "../App";
-import { getLeagueFlagUrl } from "../lib/api";
+import { getLeagueFlagUrl, SPORTS } from "../lib/api";
 
 interface DesktopSidebarProps {
   activePage: Page;
   setActivePage: (page: Page) => void;
+  activeSportIndex: number;
+  onSportChange: (idx: number) => void;
+  sportLeagues: string[];
+  activeLeague: string;
+  onLeagueChange: (league: string) => void;
 }
 
 const NAV_ITEMS: { page: Page; label: string; icon: React.ElementType; accent?: string }[] = [
@@ -17,16 +22,6 @@ const NAV_ITEMS: { page: Page; label: string; icon: React.ElementType; accent?: 
   { page: "profile",     label: "My Account", icon: User },
 ];
 
-const TOP_CHAMPIONSHIPS = [
-  { name: "Premier League" },
-  { name: "Bundesliga" },
-  { name: "Serie A" },
-  { name: "LaLiga" },
-  { name: "Ligue 1 France" },
-  { name: "Uganda Premier League" },
-  { name: "Kenya Premier" },
-];
-
 const SPORT_ICON_URLS: Record<string, string> = {
   S:  "https://www.svgrepo.com/show/404149/soccer-ball.svg",
   B:  "https://www.svgrepo.com/show/480502/basketball-6.svg",
@@ -35,18 +30,9 @@ const SPORT_ICON_URLS: Record<string, string> = {
   MM: "https://www.svgrepo.com/show/480387/headgear-for-combat-sports-such-as-boxing.svg",
   BB: "https://www.svgrepo.com/show/480565/baseball-ball-1.svg",
   V:  "https://www.svgrepo.com/show/480340/volleyball-2.svg",
+  HB: "https://www.svgrepo.com/show/480386/handball.svg",
+  SP: "https://www.svgrepo.com/show/480359/cycling-1.svg",
 };
-
-const POPULAR_SPORTS = [
-  { code: "S",  name: "Soccer",      count: 2047 },
-  { code: "B",  name: "Basketball",  count: 1093 },
-  { code: "T",  name: "Tennis",      count: 1093 },
-  { code: "MM", name: "MMA",         count: 1093 },
-  { code: "V",  name: "Volleyball",  count: 1093 },
-  { code: "BB", name: "Baseball",    count: 1093 },
-  { code: "RL", name: "Rugby",       count: 1093 },
-  { code: "ES", name: "E-Sports",    count: 893  },
-];
 
 function LeagueFlag({ name }: { name: string }) {
   const url = getLeagueFlagUrl(name);
@@ -56,17 +42,30 @@ function LeagueFlag({ name }: { name: string }) {
   return <Globe size={11} style={{ flexShrink: 0, opacity: 0.4 }} />;
 }
 
-function SportImg({ code }: { code: string }) {
+function SportImg({ code, active }: { code: string; active?: boolean }) {
   const url = SPORT_ICON_URLS[code];
   if (url) {
-    return <img src={url} alt="" width={14} height={14} style={{ objectFit: "contain", filter: "brightness(0) invert(0.7)", flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />;
+    return (
+      <img
+        src={url} alt="" width={14} height={14}
+        style={{ objectFit: "contain", flexShrink: 0, filter: active ? "brightness(0) saturate(100%) invert(47%) sepia(70%) saturate(500%) hue-rotate(100deg) brightness(95%)" : "brightness(0) invert(0.55)" }}
+        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+      />
+    );
   }
-  return <Globe size={14} style={{ opacity: 0.5, flexShrink: 0 }} />;
+  return <Globe size={14} style={{ opacity: active ? 1 : 0.5, flexShrink: 0, color: active ? "var(--green)" : undefined }} />;
 }
 
-export default function DesktopSidebar({ activePage, setActivePage }: DesktopSidebarProps) {
+export default function DesktopSidebar({
+  activePage, setActivePage,
+  activeSportIndex, onSportChange,
+  sportLeagues, activeLeague, onLeagueChange,
+}: DesktopSidebarProps) {
   const [champOpen, setChampOpen] = useState(true);
   const [sportsOpen, setSportsOpen] = useState(true);
+
+  const visibleLeagues = sportLeagues.filter((l) => l !== "All");
+  const isSportPage = activePage === "sport" || activePage === "live";
 
   return (
     <aside className="desktop-sidebar">
@@ -96,7 +95,7 @@ export default function DesktopSidebar({ activePage, setActivePage }: DesktopSid
         </div>
       </div>
 
-      {/* Top Championships */}
+      {/* Top Championships — shows leagues for current sport */}
       <div
         className="dsb-section-title"
         style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
@@ -107,33 +106,52 @@ export default function DesktopSidebar({ activePage, setActivePage }: DesktopSid
       </div>
       {champOpen && (
         <div className="dsb-league-group">
-          {TOP_CHAMPIONSHIPS.map((league) => (
-            <div key={league.name} className="dsb-league-item" onClick={() => setActivePage("sport")}>
-              <LeagueFlag name={league.name} />
-              <span className="dsb-league-name">{league.name}</span>
+          {visibleLeagues.length === 0 ? (
+            <div style={{ padding: "10px 12px", fontSize: 11, color: "var(--text-muted)", fontStyle: "italic" }}>
+              Select a sport below
             </div>
-          ))}
+          ) : (
+            visibleLeagues.slice(0, 12).map((league) => {
+              const isActive = isSportPage && activeLeague === league;
+              return (
+                <div
+                  key={league}
+                  className={`dsb-league-item${isActive ? " active" : ""}`}
+                  onClick={() => onLeagueChange(league)}
+                >
+                  <LeagueFlag name={league} />
+                  <span className={`dsb-league-name${isActive ? " active" : ""}`}>{league}</span>
+                </div>
+              );
+            })
+          )}
         </div>
       )}
 
-      {/* Popular Sports */}
+      {/* Sports */}
       <div
         className="dsb-section-title"
         style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
         onClick={() => setSportsOpen((v) => !v)}
       >
-        <span>POPULAR SPORTS</span>
+        <span>SPORTS</span>
         {sportsOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
       </div>
       {sportsOpen && (
         <div className="dsb-league-group">
-          {POPULAR_SPORTS.map((sport) => (
-            <div key={sport.code} className="dsb-league-item" onClick={() => setActivePage("sport")}>
-              <SportImg code={sport.code} />
-              <span className="dsb-league-name">{sport.name}</span>
-              <span className="dsb-sport-count">{sport.count}</span>
-            </div>
-          ))}
+          {SPORTS.map((sport, idx) => {
+            const isActive = isSportPage && activeSportIndex === idx;
+            return (
+              <div
+                key={sport.code}
+                className={`dsb-league-item${isActive ? " active" : ""}`}
+                onClick={() => onSportChange(idx)}
+              >
+                <SportImg code={sport.code} active={isActive} />
+                <span className={`dsb-league-name${isActive ? " active" : ""}`}>{sport.name}</span>
+              </div>
+            );
+          })}
         </div>
       )}
 

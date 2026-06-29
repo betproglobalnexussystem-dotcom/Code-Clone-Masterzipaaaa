@@ -796,6 +796,18 @@ input, select, textarea { font-family: inherit; outline: none; }
 .jackpot-btn svg { width: 13px; height: 13px; }
 
 /* ===== LEAGUE CHIPS ===== */
+/* Sport page mobile defaults */
+.sport-tabs-bar {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: #1c1e24;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.sport-tabs-bar::-webkit-scrollbar { display: none; }
+.sport-page-desktop-title { display: none; }
+
 .leagues-list {
   display: flex;
   gap: 7px;
@@ -1940,6 +1952,16 @@ input, select, textarea { font-family: inherit; outline: none; }
     border-left-color: var(--green);
   }
 
+  .dsb-league-item.active {
+    background: var(--green-light);
+    border-left-color: var(--green);
+  }
+
+  .dsb-league-name.active {
+    color: var(--green);
+    font-weight: 600;
+  }
+
   .dsb-league-name {
     font-size: 11px;
     color: var(--text-secondary);
@@ -1974,5 +1996,17 @@ input, select, textarea { font-family: inherit; outline: none; }
 
   .main-content {
     max-width: 860px;
+  }
+
+  /* Sport page — sidebar takes over filtering on desktop */
+  .sport-tabs-bar { display: none !important; }
+  .sport-league-chips { display: none !important; }
+  .sport-page-desktop-title {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    font-family: 'Oswald', sans-serif;
+    letter-spacing: 0.4px;
   }
 }
