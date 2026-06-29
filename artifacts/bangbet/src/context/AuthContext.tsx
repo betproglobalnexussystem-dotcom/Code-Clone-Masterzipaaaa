@@ -46,7 +46,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   transactions: Transaction[];
-  login: (phone: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (phone: string, password: string, dialCode?: string) => Promise<{ success: boolean; error?: string }>;
   register: (firstName: string, lastName: string, phone: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
@@ -154,16 +154,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsub;
   }, [fbUser?.uid]);
 
-  const login = async (phone: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    const clean = phone.replace(/\s+/g, "");
-    if (!clean) return { success: false, error: "Please enter your phone number." };
+  const login = async (phone: string, password: string, dialCode?: string): Promise<{ success: boolean; error?: string }> => {
+    const local = phone.replace(/\s+/g, "");
+    if (!local) return { success: false, error: "Please enter your phone number." };
     if (!password) return { success: false, error: "Please enter your password." };
+
+    // Build candidates: try international format first, then local
+    const intl = dialCode ? dialCode + local.replace(/^0/, "") : null;
+    const candidates = [...new Set([intl, local].filter(Boolean) as string[])];
+
     try {
-      const q = query(collection(db, "users"), where("phone", "==", clean));
-      const qs = await getDocs(q);
-      if (qs.empty) return { success: false, error: "No account found with this phone number." };
-      const email = qs.docs[0].data().email;
-      if (!email) return { success: false, error: "Account error. Please contact support." };
+      let email: string | null = null;
+      for (const candidate of candidates) {
+        const qs = await getDocs(query(collection(db, "users"), where("phone", "==", candidate)));
+        if (!qs.empty) { email = qs.docs[0].data().email ?? null; break; }
+      }
+      if (!email) return { success: false, error: "No account found with this phone number." };
       await signInWithEmailAndPassword(auth, email, password);
       return { success: true };
     } catch (err: any) {

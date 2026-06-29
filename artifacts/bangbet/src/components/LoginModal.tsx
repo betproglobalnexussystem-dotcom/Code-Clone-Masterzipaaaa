@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Phone, Lock, User, Mail, LogIn, UserPlus, Eye, EyeOff, AlertCircle, CheckCircle, X, ArrowLeft, ChevronDown } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { COUNTRIES, DEFAULT_COUNTRY, type Country } from "../lib/countries";
@@ -20,9 +20,158 @@ const GoogleIcon = () => (
   </svg>
 );
 
+// ── Country Phone Input ─────────────────────────────────────────────────────
+interface CountryPhoneInputProps {
+  country: Country;
+  phone: string;
+  onCountryChange: (c: Country) => void;
+  onPhoneChange: (v: string) => void;
+  onEnter?: () => void;
+  placeholder?: string;
+  autoComplete?: string;
+}
+
+function CountryPhoneInput({ country, phone, onCountryChange, onPhoneChange, onEnter, placeholder = "700 000 000", autoComplete = "tel" }: CountryPhoneInputProps) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const dropRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
+        setOpen(false); setSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const filtered = COUNTRIES.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase()) || c.dial.includes(search)
+  );
+
+  return (
+    <div style={{ display: "flex", gap: 5 }}>
+      {/* Flag + dial code button */}
+      <div ref={dropRef} style={{ position: "relative", flexShrink: 0 }}>
+        <button
+          type="button"
+          onClick={() => { setOpen(!open); setSearch(""); }}
+          style={{
+            display: "flex", alignItems: "center", gap: 3,
+            background: "var(--bg-light)", border: "1.5px solid var(--border)",
+            borderRadius: 8, padding: "7px 7px", cursor: "pointer",
+            fontSize: 12, color: "var(--text-primary)", whiteSpace: "nowrap", height: "100%",
+          }}
+        >
+          <span style={{ fontSize: 17, lineHeight: 1 }}>{country.flag}</span>
+          <span style={{ fontWeight: 600 }}>{country.dial}</span>
+          <ChevronDown size={10} style={{ color: "var(--text-muted)" }} />
+        </button>
+
+        {open && (
+          <div style={{
+            position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 1000,
+            background: "#fff", border: "1.5px solid var(--border)", borderRadius: 10,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.15)", width: 210, maxHeight: 200,
+            overflow: "hidden", display: "flex", flexDirection: "column",
+          }}>
+            <div style={{ padding: "5px 7px", borderBottom: "1px solid var(--border)" }}>
+              <input
+                autoFocus
+                className="form-input"
+                placeholder="Search..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ padding: "4px 8px", fontSize: 11 }}
+              />
+            </div>
+            <div style={{ overflowY: "auto", flex: 1 }}>
+              {filtered.map((c) => (
+                <button
+                  key={c.code}
+                  type="button"
+                  onClick={() => { onCountryChange(c); setOpen(false); setSearch(""); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 7, width: "100%",
+                    padding: "6px 10px", background: c.code === country.code ? "var(--bg-light)" : "none",
+                    border: "none", cursor: "pointer", fontSize: 11.5, textAlign: "left",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <span style={{ fontSize: 16, lineHeight: 1 }}>{c.flag}</span>
+                  <span style={{ flex: 1 }}>{c.name}</span>
+                  <span style={{ color: "var(--text-muted)", fontSize: 10.5 }}>{c.dial}</span>
+                </button>
+              ))}
+              {filtered.length === 0 && (
+                <p style={{ padding: "10px", fontSize: 11, color: "var(--text-muted)", textAlign: "center" }}>No results</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Phone number input */}
+      <input
+        className="form-input"
+        type="tel"
+        placeholder={placeholder}
+        value={phone}
+        onChange={(e) => onPhoneChange(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
+        autoComplete={autoComplete}
+        style={{ flex: 1, minWidth: 0 }}
+      />
+    </div>
+  );
+}
+
+// ── Detect country from browser locale / timezone ──────────────────────────
+function detectCountry(): Country {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const tzMap: Record<string, string> = {
+      "Africa/Kampala": "UG", "Africa/Nairobi": "KE", "Africa/Dar_es_Salaam": "TZ",
+      "Africa/Kigali": "RW", "Africa/Addis_Ababa": "ET", "Africa/Lagos": "NG",
+      "Africa/Accra": "GH", "Africa/Johannesburg": "ZA", "Africa/Lusaka": "ZM",
+      "Africa/Harare": "ZW", "Africa/Blantyre": "MW", "Africa/Maputo": "MZ",
+      "Africa/Kinshasa": "CD", "Africa/Douala": "CM", "Africa/Dakar": "SN",
+      "Africa/Abidjan": "CI", "Africa/Cairo": "EG", "Africa/Casablanca": "MA",
+      "Europe/London": "GB", "America/New_York": "US", "America/Chicago": "US",
+      "America/Los_Angeles": "US", "Asia/Kolkata": "IN", "Asia/Shanghai": "CN",
+      "Europe/Berlin": "DE", "Europe/Paris": "FR", "America/Toronto": "CA",
+      "Australia/Sydney": "AU", "America/Sao_Paulo": "BR", "Europe/Lisbon": "PT",
+      "Europe/Madrid": "ES", "Europe/Rome": "IT",
+    };
+    const code = tzMap[tz];
+    if (code) {
+      const found = COUNTRIES.find(c => c.code === code);
+      if (found) return found;
+    }
+    // Fallback: try navigator.language (e.g. "sw-UG" → "UG")
+    const lang = navigator.language || "";
+    const langCode = lang.split("-")[1]?.toUpperCase();
+    if (langCode) {
+      const found = COUNTRIES.find(c => c.code === langCode);
+      if (found) return found;
+    }
+  } catch {}
+  return DEFAULT_COUNTRY;
+}
+
+// ── Main Modal ─────────────────────────────────────────────────────────────
 export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalProps) {
   const { login, register, forgotPassword, signInWithGoogle, completeGoogleSignup } = useAuth();
   const [view, setView] = useState<View>(mode);
+
+  // Shared country (auto-detected, used across login / register / google-prompt)
+  const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY);
+
+  useEffect(() => {
+    setCountry(detectCountry());
+  }, []);
 
   // Login fields
   const [phone, setPhone] = useState("");
@@ -41,11 +190,8 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
   // Forgot password
   const [forgotEmail, setForgotEmail] = useState("");
 
-  // Phone prompt (Google sign-in completion)
-  const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY);
+  // Google phone prompt
   const [googlePhone, setGooglePhone] = useState("");
-  const [showCountryList, setShowCountryList] = useState(false);
-  const [countrySearch, setCountrySearch] = useState("");
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -54,11 +200,14 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
   const clearMessages = () => { setError(""); setSuccess(""); };
   const switchTo = (v: View) => { clearMessages(); setView(v); };
 
+  // full E.164 helper
+  const fullPhone = (local: string) => country.dial + local.replace(/\s+/g, "").replace(/^0/, "");
+
   // ── handlers ──
   const handleLogin = async () => {
     clearMessages(); setLoading(true);
     try {
-      const r = await login(phone, password);
+      const r = await login(phone, password, country.dial);
       if (r.success) { setSuccess("Welcome back!"); setTimeout(onClose, 700); }
       else setError(r.error || "Login failed.");
     } finally { setLoading(false); }
@@ -69,7 +218,7 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
     if (!agreedAge) { setError("You must confirm you are 25 years or older to register."); return; }
     setLoading(true);
     try {
-      const r = await register(firstName, lastName, regPhone, email, regPassword);
+      const r = await register(firstName, lastName, fullPhone(regPhone), email, regPassword);
       if (r.success) { setSuccess("Account created! Welcome to BetMali!"); setTimeout(onClose, 900); }
       else setError(r.error || "Registration failed.");
     } finally { setLoading(false); }
@@ -88,8 +237,8 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
     clearMessages(); setLoading(true);
     try {
       const r = await signInWithGoogle();
-      if (r.success && r.needsPhone) { switchTo("phone-prompt"); }
-      else if (r.success) { onClose(); }
+      if (r.success && r.needsPhone) switchTo("phone-prompt");
+      else if (r.success) onClose();
       else if (r.error) setError(r.error);
     } finally { setLoading(false); }
   };
@@ -103,20 +252,9 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
     } finally { setLoading(false); }
   };
 
-  const handleKey = (e: React.KeyboardEvent, fn: () => void) => {
-    if (e.key === "Enter") fn();
-  };
-
-  const filteredCountries = COUNTRIES.filter(c =>
-    c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
-    c.dial.includes(countrySearch)
-  );
-
   // ── shared styles ──
   const eyeBtn: React.CSSProperties = { position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 0, display: "flex" };
   const inputRow: React.CSSProperties = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 };
-  const divider: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, margin: "10px 0", color: "var(--text-muted)", fontSize: 10 };
-  const dividerLine: React.CSSProperties = { flex: 1, height: 1, background: "var(--border)" };
   const googleBtn: React.CSSProperties = {
     display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
     border: "1.5px solid var(--border)", borderRadius: 8, background: "#fff",
@@ -172,14 +310,20 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
           <>
             <div className="form-group">
               <label className="form-label"><Phone size={11} /> Phone Number</label>
-              <input className="form-input" type="tel" placeholder="07XXXXXXXX" value={phone}
-                onChange={(e) => setPhone(e.target.value)} onKeyDown={(e) => handleKey(e, handleLogin)} autoComplete="tel" />
+              <CountryPhoneInput
+                country={country}
+                phone={phone}
+                onCountryChange={setCountry}
+                onPhoneChange={setPhone}
+                onEnter={handleLogin}
+                placeholder="700 000 000"
+              />
             </div>
             <div className="form-group">
               <label className="form-label"><Lock size={11} /> Password</label>
               <div style={{ position: "relative" }}>
                 <input className="form-input" type={showPassword ? "text" : "password"} placeholder="Your password" value={password}
-                  onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => handleKey(e, handleLogin)}
+                  onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                   autoComplete="current-password" style={{ paddingRight: 32 }} />
                 <button type="button" style={eyeBtn} onClick={() => setShowPassword(!showPassword)}>
                   {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
@@ -192,7 +336,6 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
               </span>
             </div>
 
-            {/* Login | Google — same row */}
             <div style={{ display: "flex", gap: 7 }}>
               <button className="btn-primary" onClick={handleLogin} disabled={loading}
                 style={{ opacity: loading ? 0.75 : 1, fontSize: 12, padding: "8px 10px", flex: 1 }}>
@@ -228,8 +371,15 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
 
             <div className="form-group">
               <label className="form-label"><Phone size={11} /> Phone Number</label>
-              <input className="form-input" type="tel" placeholder="07XXXXXXXX" value={regPhone}
-                onChange={(e) => setRegPhone(e.target.value)} autoComplete="tel" />
+              <CountryPhoneInput
+                country={country}
+                phone={regPhone}
+                onCountryChange={setCountry}
+                onPhoneChange={setRegPhone}
+                onEnter={handleRegister}
+                placeholder="700 000 000"
+                autoComplete="tel"
+              />
             </div>
 
             <div className="form-group" style={inputRow}>
@@ -242,7 +392,7 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
                 <label className="form-label"><Lock size={11} /> Password</label>
                 <div style={{ position: "relative" }}>
                   <input className="form-input" type={showRegPassword ? "text" : "password"} placeholder="Min 6 chars" value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)} onKeyDown={(e) => handleKey(e, handleRegister)}
+                    onChange={(e) => setRegPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleRegister()}
                     autoComplete="new-password" style={{ paddingRight: 32 }} />
                   <button type="button" style={eyeBtn} onClick={() => setShowRegPassword(!showRegPassword)}>
                     {showRegPassword ? <EyeOff size={13} /> : <Eye size={13} />}
@@ -259,7 +409,6 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
               </span>
             </label>
 
-            {/* Create Account | Google — same row */}
             <div style={{ display: "flex", gap: 7 }}>
               <button className="btn-primary" onClick={handleRegister} disabled={loading || !agreedAge}
                 style={{ opacity: loading || !agreedAge ? 0.6 : 1, fontSize: 11.5, padding: "8px 8px", flex: 1 }}>
@@ -286,7 +435,8 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
             <div className="form-group">
               <label className="form-label"><Mail size={11} /> Email Address</label>
               <input className="form-input" type="email" placeholder="you@email.com" value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)} onKeyDown={(e) => handleKey(e, handleForgot)} autoComplete="email" />
+                onChange={(e) => setForgotEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleForgot()}
+                autoComplete="email" />
             </div>
             <button className="btn-primary" onClick={handleForgot} disabled={loading || !!success}
               style={{ opacity: loading || !!success ? 0.75 : 1, fontSize: 12.5, padding: "8px 14px" }}>
@@ -305,96 +455,28 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
             <p style={{ fontSize: 11.5, color: "var(--text-secondary)", marginBottom: 12, lineHeight: 1.5 }}>
               Almost there! We need your phone number to complete your account.
             </p>
-
             <div className="form-group">
               <label className="form-label"><Phone size={11} /> Phone Number</label>
-              <div style={{ display: "flex", gap: 6 }}>
-                {/* Country selector */}
-                <div style={{ position: "relative" }}>
-                  <button
-                    type="button"
-                    onClick={() => { setShowCountryList(!showCountryList); setCountrySearch(""); }}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 4,
-                      background: "var(--bg-light)", border: "1.5px solid var(--border)",
-                      borderRadius: 8, padding: "7px 8px", cursor: "pointer",
-                      fontSize: 12.5, color: "var(--text-primary)", whiteSpace: "nowrap",
-                      height: "100%",
-                    }}
-                  >
-                    <span style={{ fontSize: 16, lineHeight: 1 }}>{country.flag}</span>
-                    <span>{country.dial}</span>
-                    <ChevronDown size={11} style={{ color: "var(--text-muted)" }} />
-                  </button>
-
-                  {showCountryList && (
-                    <div style={{
-                      position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 999,
-                      background: "#fff", border: "1.5px solid var(--border)", borderRadius: 10,
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.15)", width: 220, maxHeight: 220, overflow: "hidden",
-                      display: "flex", flexDirection: "column",
-                    }}>
-                      <div style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>
-                        <input
-                          autoFocus
-                          className="form-input"
-                          placeholder="Search country..."
-                          value={countrySearch}
-                          onChange={(e) => setCountrySearch(e.target.value)}
-                          style={{ padding: "5px 8px", fontSize: 11.5 }}
-                        />
-                      </div>
-                      <div style={{ overflowY: "auto", flex: 1 }}>
-                        {filteredCountries.map((c) => (
-                          <button
-                            key={c.code}
-                            type="button"
-                            onClick={() => { setCountry(c); setShowCountryList(false); setCountrySearch(""); }}
-                            style={{
-                              display: "flex", alignItems: "center", gap: 8, width: "100%",
-                              padding: "7px 10px", background: c.code === country.code ? "var(--bg-light)" : "none",
-                              border: "none", cursor: "pointer", fontSize: 12, textAlign: "left",
-                              color: "var(--text-primary)",
-                            }}
-                          >
-                            <span style={{ fontSize: 16, lineHeight: 1 }}>{c.flag}</span>
-                            <span style={{ flex: 1 }}>{c.name}</span>
-                            <span style={{ color: "var(--text-muted)", fontSize: 11 }}>{c.dial}</span>
-                          </button>
-                        ))}
-                        {filteredCountries.length === 0 && (
-                          <p style={{ padding: "10px", fontSize: 11, color: "var(--text-muted)", textAlign: "center" }}>No results</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Phone input */}
-                <input
-                  className="form-input"
-                  type="tel"
-                  placeholder="700 000 000"
-                  value={googlePhone}
-                  onChange={(e) => setGooglePhone(e.target.value)}
-                  onKeyDown={(e) => handleKey(e, handlePhonePrompt)}
-                  style={{ flex: 1 }}
-                />
-              </div>
+              <CountryPhoneInput
+                country={country}
+                phone={googlePhone}
+                onCountryChange={setCountry}
+                onPhoneChange={setGooglePhone}
+                onEnter={handlePhonePrompt}
+                placeholder="700 000 000"
+              />
             </div>
-
             <button className="btn-primary" onClick={handlePhonePrompt} disabled={loading}
               style={{ opacity: loading ? 0.75 : 1, fontSize: 12.5, padding: "8px 14px" }}>
               {loading ? "Saving..." : "Continue →"}
             </button>
-
             <p style={{ fontSize: 10, color: "var(--text-muted)", textAlign: "center", marginTop: 8, lineHeight: 1.5 }}>
               Required to complete your BetMali account
             </p>
           </>
         )}
 
-        {view !== "phone-prompt" && (
+        {!isPhonePrompt && (
           <p style={{ fontSize: 10, color: "var(--text-muted)", textAlign: "center", marginTop: 8, lineHeight: 1.5 }}>
             25+ only · Terms & Conditions apply
           </p>
