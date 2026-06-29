@@ -72,37 +72,41 @@ export default function DesktopSidebar({ activePage, setActivePage }: DesktopSid
     <aside className="desktop-sidebar">
       {/* Main nav */}
       <div className="dsb-section-title">MENU</div>
-      {NAV_ITEMS.map(({ page, label, icon: Icon, accent }) => {
-        const active = activePage === page;
-        return (
-          <div
-            key={page}
-            className={`dsb-nav-item${active ? " active" : ""}`}
-            onClick={() => setActivePage(page)}
-          >
-            <Icon size={15} color={active ? "var(--green)" : accent ?? "rgba(255,255,255,0.45)"} />
-            <span className="dsb-nav-label">{label}</span>
-            {page === "live" && (
-              <span className="dsb-live-badge">LIVE</span>
-            )}
-          </div>
-        );
-      })}
-
-      <div className="dsb-nav-item" style={{ opacity: 0.5, cursor: "default" }}>
-        <Gamepad2 size={15} color="rgba(255,255,255,0.4)" />
-        <span className="dsb-nav-label">Slots</span>
-        <span style={{ fontSize: 8, background: "var(--green)", color: "#fff", borderRadius: 5, padding: "1px 5px", fontWeight: 700, fontFamily: "Oswald, sans-serif" }}>NEW</span>
+      <div className="dsb-nav-group">
+        {NAV_ITEMS.map(({ page, label, icon: Icon, accent }) => {
+          const active = activePage === page;
+          return (
+            <div
+              key={page}
+              className={`dsb-nav-item${active ? " active" : ""}`}
+              onClick={() => setActivePage(page)}
+            >
+              <Icon size={15} color={active ? "var(--green)" : accent ?? "var(--text-muted)"} />
+              <span className="dsb-nav-label">{label}</span>
+              {page === "live" && (
+                <span className="dsb-live-badge">LIVE</span>
+              )}
+            </div>
+          );
+        })}
+        <div className="dsb-nav-item" style={{ opacity: 0.5, cursor: "default" }}>
+          <Gamepad2 size={15} color="var(--text-muted)" />
+          <span className="dsb-nav-label">Slots</span>
+          <span style={{ fontSize: 8, background: "var(--green)", color: "#fff", borderRadius: 5, padding: "1px 5px", fontWeight: 700, fontFamily: "Oswald, sans-serif" }}>NEW</span>
+        </div>
       </div>
 
       {/* Top Championships */}
-      <div className="dsb-section-title" style={{ marginTop: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
-        onClick={() => setChampOpen((v) => !v)}>
+      <div
+        className="dsb-section-title"
+        style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
+        onClick={() => setChampOpen((v) => !v)}
+      >
         <span>TOP CHAMPIONSHIPS</span>
         {champOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
       </div>
       {champOpen && (
-        <div>
+        <div className="dsb-league-group">
           {TOP_CHAMPIONSHIPS.map((league) => (
             <div key={league.name} className="dsb-league-item" onClick={() => setActivePage("sport")}>
               <LeagueFlag name={league.name} />
@@ -113,13 +117,16 @@ export default function DesktopSidebar({ activePage, setActivePage }: DesktopSid
       )}
 
       {/* Popular Sports */}
-      <div className="dsb-section-title" style={{ marginTop: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
-        onClick={() => setSportsOpen((v) => !v)}>
+      <div
+        className="dsb-section-title"
+        style={{ cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
+        onClick={() => setSportsOpen((v) => !v)}
+      >
         <span>POPULAR SPORTS</span>
         {sportsOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
       </div>
       {sportsOpen && (
-        <div>
+        <div className="dsb-league-group">
           {POPULAR_SPORTS.map((sport) => (
             <div key={sport.code} className="dsb-league-item" onClick={() => setActivePage("sport")}>
               <SportImg code={sport.code} />
@@ -131,7 +138,7 @@ export default function DesktopSidebar({ activePage, setActivePage }: DesktopSid
       )}
 
       <div className="dsb-footer">
-        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", lineHeight: 1.6, textAlign: "center" }}>
+        <div style={{ fontSize: 10, color: "var(--text-muted)", lineHeight: 1.6, textAlign: "center" }}>
           © 2024 BetMali. All rights reserved.<br />
           Bet responsibly. 18+
         </div>

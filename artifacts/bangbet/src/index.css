@@ -260,6 +260,8 @@ input, select, textarea { font-family: inherit; outline: none; }
   font-size: 12px;
   color: rgba(255,255,255,0.85);
   overflow: hidden;
+  margin: 8px 10px 4px;
+  border-radius: 10px;
 }
 
 .notice-icon { color: #fff; flex-shrink: 0; }
@@ -276,7 +278,7 @@ input, select, textarea { font-family: inherit; outline: none; }
 }
 
 /* ===== BANNER ===== */
-.banner-slider { overflow: hidden; }
+.banner-slider { overflow: hidden; margin: 8px 10px 4px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.10); }
 
 .banner-slide {
   width: 100%;
@@ -361,7 +363,7 @@ input, select, textarea { font-family: inherit; outline: none; }
   background: rgba(255,255,255,0.07);
 }
 
-.banner-dots { display: flex; justify-content: center; gap: 5px; padding: 9px 0 5px; background: #fff; }
+.banner-dots { display: flex; justify-content: center; gap: 5px; padding: 9px 0 10px; background: #fff; border-radius: 0 0 12px 12px; }
 
 .banner-dot {
   width: 5px;
@@ -386,7 +388,10 @@ input, select, textarea { font-family: inherit; outline: none; }
   gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
-  border-bottom: 1px solid var(--border);
+  margin: 4px 10px 4px;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  border-bottom: none;
 }
 .quick-nav::-webkit-scrollbar { display: none; }
 
@@ -425,10 +430,16 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 /* ===== DIVIDER ===== */
 .divider { height: 1px; background: var(--border); }
-.divider-thick { height: 8px; background: var(--bg-light); }
+.divider-thick { height: 10px; background: var(--bg-light); }
 
 /* ===== SECTION ===== */
-.section { margin-bottom: 4px; }
+.section {
+  margin: 0 10px 10px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  background: #fff;
+}
 
 .section-header {
   display: flex;
@@ -436,6 +447,7 @@ input, select, textarea { font-family: inherit; outline: none; }
   justify-content: space-between;
   padding: 13px 14px 9px;
   background: #fff;
+  border-radius: 10px 10px 0 0;
 }
 
 .section-title {
@@ -466,7 +478,7 @@ input, select, textarea { font-family: inherit; outline: none; }
 }
 
 /* ===== MATCH CARD ===== */
-.match-list { background: #fff; }
+.match-list { background: #fff; border-radius: 0 0 10px 10px; overflow: hidden; }
 
 .match-item {
   border-bottom: 1px solid var(--border2);
@@ -607,6 +619,10 @@ input, select, textarea { font-family: inherit; outline: none; }
   border-bottom: 1px solid var(--border);
   overflow-x: auto;
   scrollbar-width: none;
+  margin: 4px 10px 4px;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  border-bottom: none;
 }
 .sport-tabs::-webkit-scrollbar { display: none; }
 
@@ -640,6 +656,10 @@ input, select, textarea { font-family: inherit; outline: none; }
   position: sticky;
   top: 54px;
   z-index: 90;
+  margin: 4px 10px 4px;
+  border-radius: 10px;
+  border-bottom: none;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
 }
 .top-tabs::-webkit-scrollbar { display: none; }
 
@@ -664,22 +684,23 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 /* ===== SEARCH BAR ===== */
 .search-bar {
-  padding: 9px 10px;
-  background: #fff;
-  border-bottom: 1px solid var(--border);
+  padding: 7px 10px;
+  background: transparent;
+  border-bottom: none;
   position: sticky;
   top: 54px;
   z-index: 89;
 }
 
 .search-input-wrap {
-  background: var(--bg-light);
+  background: #fff;
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
 .search-icon { color: var(--text-muted); flex-shrink: 0; }
@@ -722,6 +743,9 @@ input, select, textarea { font-family: inherit; outline: none; }
   justify-content: space-between;
   position: relative;
   overflow: hidden;
+  margin: 0 10px 10px;
+  border-radius: 10px;
+  box-shadow: 0 3px 12px rgba(34,138,79,0.25);
 }
 
 .jackpot-banner::before {
@@ -779,7 +803,10 @@ input, select, textarea { font-family: inherit; outline: none; }
   background: #fff;
   overflow-x: auto;
   scrollbar-width: none;
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 10px;
+  margin: 0 10px 4px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
 }
 .leagues-list::-webkit-scrollbar { display: none; }
 
@@ -1150,11 +1177,14 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 /* ===== PROMO CARDS ===== */
 .promo-card {
-  margin: 0 0 4px;
+  margin: 0 10px 10px;
   background: #fff;
   cursor: pointer;
   transition: opacity 0.15s;
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .promo-card:active { opacity: 0.9; }
@@ -1295,8 +1325,10 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 .menu-items-group {
   background: #fff;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 0 10px 10px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
 }
 
 .menu-item {
@@ -1404,9 +1436,11 @@ input, select, textarea { font-family: inherit; outline: none; }
   color: var(--text-muted);
   text-align: center;
   line-height: 1.6;
-  border-top: 1px solid var(--border);
+  border-top: none;
   background: #fff;
-  margin-top: 4px;
+  margin: 4px 10px 10px;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
 }
 
 /* ===== BASE RULES: hide desktop-only elements on mobile ===== */
@@ -1462,7 +1496,7 @@ input, select, textarea { font-family: inherit; outline: none; }
   /* Main scrollable area: remove mobile top/bottom padding */
   .main-content {
     padding-top: 0 !important;
-    padding-bottom: 0 !important;
+    padding-bottom: 10px !important;
     flex: 1;
     min-width: 0;
     height: calc(100vh - 56px);
@@ -1476,14 +1510,15 @@ input, select, textarea { font-family: inherit; outline: none; }
     flex-direction: column;
     width: 220px;
     flex-shrink: 0;
-    background: #fff;
-    border-right: 1px solid var(--border);
+    background: #f5f5f7;
+    border-right: none;
     height: calc(100vh - 56px);
     position: sticky;
     top: 56px;
     overflow-y: auto;
     overflow-x: hidden;
-    padding-bottom: 16px;
+    padding: 8px 6px 16px;
+    gap: 4px;
   }
 
   .desktop-sidebar-section-title {
@@ -1561,12 +1596,13 @@ input, select, textarea { font-family: inherit; outline: none; }
     flex-direction: column;
     width: 220px;
     flex-shrink: 0;
-    background: #ffffff;
-    border-left: 1px solid var(--border);
+    background: #f5f5f7;
+    border-left: none;
     height: calc(100vh - 56px);
     position: sticky;
     top: 56px;
     overflow-y: auto;
+    padding: 8px 6px;
   }
 
   /* Inline betslip — strip the mobile fixed-sheet styles */
@@ -1578,8 +1614,8 @@ input, select, textarea { font-family: inherit; outline: none; }
     width: 100% !important;
     max-width: none !important;
     max-height: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07) !important;
     overflow-y: visible !important;
     background: #ffffff;
     flex: 1;
@@ -1592,7 +1628,7 @@ input, select, textarea { font-family: inherit; outline: none; }
     z-index: 2;
     background: #ffffff;
     border-color: var(--border);
-    border-radius: 0;
+    border-radius: 10px 10px 0 0;
   }
 
   /* Fix top-tabs sticky offset — no mobile bottom nav on desktop */
@@ -1737,19 +1773,22 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 /* ===== LEAGUE GROUP (grouped match list) ===== */
 .league-group {
-  margin-bottom: 0;
-  border-bottom: 4px solid #f5f5f7;
+  margin: 0 10px 8px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
 }
 
 .league-group-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
+  padding: 7px 10px;
   background: var(--dark);
   position: sticky;
   top: 0;
   z-index: 5;
+  border-radius: 10px 10px 0 0;
 }
 
 .league-group-name {
@@ -1805,8 +1844,8 @@ input, select, textarea { font-family: inherit; outline: none; }
 /* ===== LIGHT SIDEBAR OVERRIDE ===== */
 @media (min-width: 1024px) {
   .desktop-sidebar {
-    background: #ffffff;
-    border-right: 1px solid var(--border);
+    background: #f5f5f7;
+    border-right: none;
     width: 210px;
   }
 
@@ -1816,15 +1855,23 @@ input, select, textarea { font-family: inherit; outline: none; }
     color: var(--text-muted);
     letter-spacing: 1.2px;
     text-transform: uppercase;
-    padding: 12px 14px 5px;
+    padding: 10px 10px 5px;
     font-family: 'Roboto', sans-serif;
+  }
+
+  .dsb-nav-group {
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.07);
+    margin-bottom: 6px;
   }
 
   .dsb-nav-item {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 9px 14px;
+    padding: 9px 12px;
     cursor: pointer;
     transition: background 0.12s;
     border-left: 3px solid transparent;
@@ -1862,11 +1909,19 @@ input, select, textarea { font-family: inherit; outline: none; }
     animation: blink 1.4s infinite;
   }
 
+  .dsb-league-group {
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.07);
+    margin-bottom: 6px;
+  }
+
   .dsb-league-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 7px 14px;
+    padding: 7px 12px;
     cursor: pointer;
     transition: background 0.1s;
     border-left: 3px solid transparent;
