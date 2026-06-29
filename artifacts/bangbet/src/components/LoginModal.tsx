@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Phone, Lock, User, Mail, LogIn, UserPlus, Eye, EyeOff, AlertCircle, CheckCircle, X, ArrowLeft } from "lucide-react";
+import { Phone, Lock, User, Mail, LogIn, UserPlus, Eye, EyeOff, AlertCircle, CheckCircle, X, ArrowLeft, ChevronDown } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { COUNTRIES, DEFAULT_COUNTRY, type Country } from "../lib/countries";
 
 interface LoginModalProps {
   mode: "login" | "register";
@@ -8,10 +9,19 @@ interface LoginModalProps {
   onSwitchMode: () => void;
 }
 
-type View = "login" | "register" | "forgot";
+type View = "login" | "register" | "forgot" | "phone-prompt";
+
+const GoogleIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+  </svg>
+);
 
 export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalProps) {
-  const { login, register, forgotPassword } = useAuth();
+  const { login, register, forgotPassword, signInWithGoogle, completeGoogleSignup } = useAuth();
   const [view, setView] = useState<View>(mode);
 
   // Login fields
@@ -31,28 +41,27 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
   // Forgot password
   const [forgotEmail, setForgotEmail] = useState("");
 
+  // Phone prompt (Google sign-in completion)
+  const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY);
+  const [googlePhone, setGooglePhone] = useState("");
+  const [showCountryList, setShowCountryList] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const clearMessages = () => { setError(""); setSuccess(""); };
-
   const switchTo = (v: View) => { clearMessages(); setView(v); };
 
+  // ── handlers ──
   const handleLogin = async () => {
-    clearMessages();
-    setLoading(true);
+    clearMessages(); setLoading(true);
     try {
-      const result = await login(phone, password);
-      if (result.success) {
-        setSuccess("Welcome back!");
-        setTimeout(onClose, 700);
-      } else {
-        setError(result.error || "Login failed.");
-      }
-    } finally {
-      setLoading(false);
-    }
+      const r = await login(phone, password);
+      if (r.success) { setSuccess("Welcome back!"); setTimeout(onClose, 700); }
+      else setError(r.error || "Login failed.");
+    } finally { setLoading(false); }
   };
 
   const handleRegister = async () => {
@@ -60,39 +69,60 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
     if (!agreedAge) { setError("You must confirm you are 25 years or older to register."); return; }
     setLoading(true);
     try {
-      const result = await register(firstName, lastName, regPhone, email, regPassword);
-      if (result.success) {
-        setSuccess("Account created! Welcome to BetMali!");
-        setTimeout(onClose, 900);
-      } else {
-        setError(result.error || "Registration failed.");
-      }
-    } finally {
-      setLoading(false);
-    }
+      const r = await register(firstName, lastName, regPhone, email, regPassword);
+      if (r.success) { setSuccess("Account created! Welcome to BetMali!"); setTimeout(onClose, 900); }
+      else setError(r.error || "Registration failed.");
+    } finally { setLoading(false); }
   };
 
   const handleForgot = async () => {
-    clearMessages();
-    setLoading(true);
+    clearMessages(); setLoading(true);
     try {
-      const result = await forgotPassword(forgotEmail);
-      if (result.success) {
-        setSuccess("Reset link sent! Check your email inbox.");
-      } else {
-        setError(result.error || "Failed to send reset email.");
-      }
-    } finally {
-      setLoading(false);
-    }
+      const r = await forgotPassword(forgotEmail);
+      if (r.success) setSuccess("Reset link sent! Check your email inbox.");
+      else setError(r.error || "Failed to send reset email.");
+    } finally { setLoading(false); }
+  };
+
+  const handleGoogle = async () => {
+    clearMessages(); setLoading(true);
+    try {
+      const r = await signInWithGoogle();
+      if (r.success && r.needsPhone) { switchTo("phone-prompt"); }
+      else if (r.success) { onClose(); }
+      else if (r.error) setError(r.error);
+    } finally { setLoading(false); }
+  };
+
+  const handlePhonePrompt = async () => {
+    clearMessages(); setLoading(true);
+    try {
+      const r = await completeGoogleSignup(googlePhone, country.dial);
+      if (r.success) { setSuccess("Account ready!"); setTimeout(onClose, 800); }
+      else setError(r.error || "Failed to save phone number.");
+    } finally { setLoading(false); }
   };
 
   const handleKey = (e: React.KeyboardEvent, fn: () => void) => {
     if (e.key === "Enter") fn();
   };
 
-  const inputRow: React.CSSProperties = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 };
+  const filteredCountries = COUNTRIES.filter(c =>
+    c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+    c.dial.includes(countrySearch)
+  );
+
+  // ── shared styles ──
   const eyeBtn: React.CSSProperties = { position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 0, display: "flex" };
+  const inputRow: React.CSSProperties = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 };
+  const divider: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, margin: "10px 0", color: "var(--text-muted)", fontSize: 10 };
+  const dividerLine: React.CSSProperties = { flex: 1, height: 1, background: "var(--border)" };
+  const googleBtn: React.CSSProperties = {
+    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+    border: "1.5px solid var(--border)", borderRadius: 8, background: "#fff",
+    cursor: "pointer", fontSize: 12, fontWeight: 600, color: "var(--dark)",
+    padding: "7px 8px", flex: 1, opacity: loading ? 0.6 : 1,
+  };
 
   const Alert = ({ type, msg }: { type: "error" | "success"; msg: string }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 6, background: type === "error" ? "#ffeaea" : "#e8f5e9", border: `1px solid ${type === "error" ? "#ffb3b3" : "#a5d6a7"}`, borderRadius: 7, padding: "6px 9px", marginBottom: 9, color: type === "error" ? "#c62828" : "#2e7d32", fontSize: 11, fontWeight: 600 }}>
@@ -101,11 +131,16 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
     </div>
   );
 
+  const isPhonePrompt = view === "phone-prompt";
+
   return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal-overlay"
+      onClick={(e) => { if (!isPhonePrompt && e.target === e.currentTarget) onClose(); }}
+    >
       <div className="modal-content">
 
-        {/* Header */}
+        {/* ── Header ── */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
           {view === "forgot" ? (
             <button onClick={() => switchTo("login")} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 2, display: "flex" }}>
@@ -118,16 +153,21 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
             {view === "login" && <>WELCOME <span className="highlight">BACK</span></>}
             {view === "register" && <>CREATE <span className="highlight">ACCOUNT</span></>}
             {view === "forgot" && <>RESET <span className="highlight">PASSWORD</span></>}
+            {view === "phone-prompt" && <>ADD <span className="highlight">PHONE</span></>}
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 2, display: "flex" }}>
-            <X size={15} />
-          </button>
+          {isPhonePrompt ? (
+            <div style={{ width: 19 }} />
+          ) : (
+            <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 2, display: "flex" }}>
+              <X size={15} />
+            </button>
+          )}
         </div>
 
         {error && <Alert type="error" msg={error} />}
         {success && <Alert type="success" msg={success} />}
 
-        {/* ── LOGIN ── */}
+        {/* ══ LOGIN ══ */}
         {view === "login" && (
           <>
             <div className="form-group">
@@ -151,10 +191,18 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
                 Forgot password?
               </span>
             </div>
-            <button className="btn-primary" onClick={handleLogin} disabled={loading}
-              style={{ opacity: loading ? 0.75 : 1, fontSize: 12.5, padding: "8px 14px" }}>
-              {loading ? "Please wait..." : <><LogIn size={13} /> LOGIN</>}
-            </button>
+
+            {/* Login | Google — same row */}
+            <div style={{ display: "flex", gap: 7 }}>
+              <button className="btn-primary" onClick={handleLogin} disabled={loading}
+                style={{ opacity: loading ? 0.75 : 1, fontSize: 12, padding: "8px 10px", flex: 1 }}>
+                {loading ? "..." : <><LogIn size={13} /> LOGIN</>}
+              </button>
+              <button style={googleBtn} onClick={handleGoogle} disabled={loading}>
+                <GoogleIcon /> Google
+              </button>
+            </div>
+
             <p style={{ fontSize: 11, color: "var(--text-secondary)", textAlign: "center", marginTop: 10, marginBottom: 0 }}>
               New to BetMali?{" "}
               <span style={{ color: "var(--green)", fontWeight: 700, cursor: "pointer" }} onClick={() => { switchTo("register"); onSwitchMode(); }}>Register</span>
@@ -162,10 +210,9 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
           </>
         )}
 
-        {/* ── REGISTER ── */}
+        {/* ══ REGISTER ══ */}
         {view === "register" && (
           <>
-            {/* First name | Last name */}
             <div className="form-group" style={inputRow}>
               <div>
                 <label className="form-label"><User size={11} /> First Name</label>
@@ -179,14 +226,12 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
               </div>
             </div>
 
-            {/* Phone */}
             <div className="form-group">
               <label className="form-label"><Phone size={11} /> Phone Number</label>
               <input className="form-input" type="tel" placeholder="07XXXXXXXX" value={regPhone}
                 onChange={(e) => setRegPhone(e.target.value)} autoComplete="tel" />
             </div>
 
-            {/* Email | Password */}
             <div className="form-group" style={inputRow}>
               <div>
                 <label className="form-label"><Mail size={11} /> Email</label>
@@ -206,23 +251,25 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
               </div>
             </div>
 
-            {/* Age agreement */}
             <label style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer", marginBottom: 10, marginTop: 4 }}>
-              <input
-                type="checkbox"
-                checked={agreedAge}
-                onChange={(e) => setAgreedAge(e.target.checked)}
-                style={{ marginTop: 2, accentColor: "var(--green)", width: 13, height: 13, flexShrink: 0, cursor: "pointer" }}
-              />
+              <input type="checkbox" checked={agreedAge} onChange={(e) => setAgreedAge(e.target.checked)}
+                style={{ marginTop: 2, accentColor: "var(--green)", width: 13, height: 13, flexShrink: 0, cursor: "pointer" }} />
               <span style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.5 }}>
                 I confirm I am <strong style={{ color: "var(--dark)" }}>25 years or older</strong> and agree to the Terms & Conditions
               </span>
             </label>
 
-            <button className="btn-primary" onClick={handleRegister} disabled={loading || !agreedAge}
-              style={{ opacity: loading || !agreedAge ? 0.6 : 1, fontSize: 12.5, padding: "8px 14px", marginTop: 0 }}>
-              {loading ? "Please wait..." : <><UserPlus size={13} /> CREATE ACCOUNT</>}
-            </button>
+            {/* Create Account | Google — same row */}
+            <div style={{ display: "flex", gap: 7 }}>
+              <button className="btn-primary" onClick={handleRegister} disabled={loading || !agreedAge}
+                style={{ opacity: loading || !agreedAge ? 0.6 : 1, fontSize: 11.5, padding: "8px 8px", flex: 1 }}>
+                {loading ? "..." : <><UserPlus size={13} /> CREATE</>}
+              </button>
+              <button style={{ ...googleBtn, opacity: loading ? 0.6 : 1 }} onClick={handleGoogle} disabled={loading}>
+                <GoogleIcon /> Google
+              </button>
+            </div>
+
             <p style={{ fontSize: 11, color: "var(--text-secondary)", textAlign: "center", marginTop: 10, marginBottom: 0 }}>
               Already have an account?{" "}
               <span style={{ color: "var(--green)", fontWeight: 700, cursor: "pointer" }} onClick={() => { switchTo("login"); onSwitchMode(); }}>Login</span>
@@ -230,17 +277,16 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
           </>
         )}
 
-        {/* ── FORGOT PASSWORD ── */}
+        {/* ══ FORGOT PASSWORD ══ */}
         {view === "forgot" && (
           <>
             <p style={{ fontSize: 11.5, color: "var(--text-secondary)", marginBottom: 12, lineHeight: 1.5 }}>
-              Enter the email address linked to your account and we'll send a reset link.
+              Enter the email linked to your account and we'll send a reset link.
             </p>
             <div className="form-group">
               <label className="form-label"><Mail size={11} /> Email Address</label>
               <input className="form-input" type="email" placeholder="you@email.com" value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)} onKeyDown={(e) => handleKey(e, handleForgot)}
-                autoComplete="email" />
+                onChange={(e) => setForgotEmail(e.target.value)} onKeyDown={(e) => handleKey(e, handleForgot)} autoComplete="email" />
             </div>
             <button className="btn-primary" onClick={handleForgot} disabled={loading || !!success}
               style={{ opacity: loading || !!success ? 0.75 : 1, fontSize: 12.5, padding: "8px 14px" }}>
@@ -253,9 +299,106 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
           </>
         )}
 
-        <p style={{ fontSize: 10, color: "var(--text-muted)", textAlign: "center", marginTop: 8, lineHeight: 1.5 }}>
-          18+ only · Terms & Conditions apply
-        </p>
+        {/* ══ PHONE PROMPT (Google new users — non-closeable) ══ */}
+        {view === "phone-prompt" && (
+          <>
+            <p style={{ fontSize: 11.5, color: "var(--text-secondary)", marginBottom: 12, lineHeight: 1.5 }}>
+              Almost there! We need your phone number to complete your account.
+            </p>
+
+            <div className="form-group">
+              <label className="form-label"><Phone size={11} /> Phone Number</label>
+              <div style={{ display: "flex", gap: 6 }}>
+                {/* Country selector */}
+                <div style={{ position: "relative" }}>
+                  <button
+                    type="button"
+                    onClick={() => { setShowCountryList(!showCountryList); setCountrySearch(""); }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 4,
+                      background: "var(--bg-light)", border: "1.5px solid var(--border)",
+                      borderRadius: 8, padding: "7px 8px", cursor: "pointer",
+                      fontSize: 12.5, color: "var(--text-primary)", whiteSpace: "nowrap",
+                      height: "100%",
+                    }}
+                  >
+                    <span style={{ fontSize: 16, lineHeight: 1 }}>{country.flag}</span>
+                    <span>{country.dial}</span>
+                    <ChevronDown size={11} style={{ color: "var(--text-muted)" }} />
+                  </button>
+
+                  {showCountryList && (
+                    <div style={{
+                      position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 999,
+                      background: "#fff", border: "1.5px solid var(--border)", borderRadius: 10,
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.15)", width: 220, maxHeight: 220, overflow: "hidden",
+                      display: "flex", flexDirection: "column",
+                    }}>
+                      <div style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)" }}>
+                        <input
+                          autoFocus
+                          className="form-input"
+                          placeholder="Search country..."
+                          value={countrySearch}
+                          onChange={(e) => setCountrySearch(e.target.value)}
+                          style={{ padding: "5px 8px", fontSize: 11.5 }}
+                        />
+                      </div>
+                      <div style={{ overflowY: "auto", flex: 1 }}>
+                        {filteredCountries.map((c) => (
+                          <button
+                            key={c.code}
+                            type="button"
+                            onClick={() => { setCountry(c); setShowCountryList(false); setCountrySearch(""); }}
+                            style={{
+                              display: "flex", alignItems: "center", gap: 8, width: "100%",
+                              padding: "7px 10px", background: c.code === country.code ? "var(--bg-light)" : "none",
+                              border: "none", cursor: "pointer", fontSize: 12, textAlign: "left",
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            <span style={{ fontSize: 16, lineHeight: 1 }}>{c.flag}</span>
+                            <span style={{ flex: 1 }}>{c.name}</span>
+                            <span style={{ color: "var(--text-muted)", fontSize: 11 }}>{c.dial}</span>
+                          </button>
+                        ))}
+                        {filteredCountries.length === 0 && (
+                          <p style={{ padding: "10px", fontSize: 11, color: "var(--text-muted)", textAlign: "center" }}>No results</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Phone input */}
+                <input
+                  className="form-input"
+                  type="tel"
+                  placeholder="700 000 000"
+                  value={googlePhone}
+                  onChange={(e) => setGooglePhone(e.target.value)}
+                  onKeyDown={(e) => handleKey(e, handlePhonePrompt)}
+                  style={{ flex: 1 }}
+                />
+              </div>
+            </div>
+
+            <button className="btn-primary" onClick={handlePhonePrompt} disabled={loading}
+              style={{ opacity: loading ? 0.75 : 1, fontSize: 12.5, padding: "8px 14px" }}>
+              {loading ? "Saving..." : "Continue →"}
+            </button>
+
+            <p style={{ fontSize: 10, color: "var(--text-muted)", textAlign: "center", marginTop: 8, lineHeight: 1.5 }}>
+              Required to complete your BetMali account
+            </p>
+          </>
+        )}
+
+        {view !== "phone-prompt" && (
+          <p style={{ fontSize: 10, color: "var(--text-muted)", textAlign: "center", marginTop: 8, lineHeight: 1.5 }}>
+            25+ only · Terms & Conditions apply
+          </p>
+        )}
       </div>
     </div>
   );

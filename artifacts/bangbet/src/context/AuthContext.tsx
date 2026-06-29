@@ -4,6 +4,7 @@ import {
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   updatePassword,
   onAuthStateChanged,
@@ -17,7 +18,7 @@ import {
   query, where, getDocs, onSnapshot,
   serverTimestamp, increment,
 } from "firebase/firestore";
-import { auth, db } from "../lib/firebase";
+import { auth, db, googleProvider } from "../lib/firebase";
 
 export interface User {
   uid: string;
@@ -56,6 +57,8 @@ interface AuthContextType {
   creditBalance: (amount: number, description: string) => Promise<void>;
   debitBalance: (amount: number, description: string) => Promise<void>;
   forgotPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
+  signInWithGoogle: () => Promise<{ success: boolean; needsPhone?: boolean; error?: string }>;
+  completeGoogleSignup: (phone: string, dialCode: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -89,6 +92,21 @@ async function addTransaction(
   });
 }
 
+function buildUser(uid: string, data: Record<string, any>, fbEmail?: string | null): User {
+  return {
+    uid,
+    name: data.name,
+    phone: data.phone ?? "",
+    email: data.email ?? fbEmail ?? "",
+    balance: data.balance ?? 0,
+    bonus: data.bonus ?? 0,
+    winnings: data.winnings ?? 0,
+    joinedDate: data.joinedDate ?? "",
+    referralCode: data.referralCode ?? "",
+    status: data.status ?? "active",
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -106,19 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const snap = await getDoc(doc(db, "users", firebaseUser.uid));
       if (snap.exists()) {
-        const data = snap.data();
-        setUser({
-          uid: firebaseUser.uid,
-          name: data.name,
-          phone: data.phone,
-          email: data.email ?? firebaseUser.email ?? "",
-          balance: data.balance ?? 0,
-          bonus: data.bonus ?? 0,
-          winnings: data.winnings ?? 0,
-          joinedDate: data.joinedDate ?? "",
-          referralCode: data.referralCode ?? "",
-          status: data.status ?? "active",
-        });
+        setUser(buildUser(firebaseUser.uid, snap.data(), firebaseUser.email));
       }
       setLoading(false);
     });
@@ -127,10 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!fbUser) { setTransactions([]); return; }
-    const q = query(
-      collection(db, "transactions"),
-      where("userId", "==", fbUser.uid),
-    );
+    const q = query(collection(db, "transactions"), where("userId", "==", fbUser.uid));
     const unsub = onSnapshot(q, (snap) => {
       const txns = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Transaction, "id">) }));
       txns.sort((a, b) => {
@@ -146,26 +149,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!fbUser) return;
     const unsub = onSnapshot(doc(db, "users", fbUser.uid), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setUser({
-          uid: fbUser.uid,
-          name: data.name,
-          phone: data.phone,
-          email: data.email ?? fbUser.email ?? "",
-          balance: data.balance ?? 0,
-          bonus: data.bonus ?? 0,
-          winnings: data.winnings ?? 0,
-          joinedDate: data.joinedDate ?? "",
-          referralCode: data.referralCode ?? "",
-          status: data.status ?? "active",
-        });
-      }
+      if (snap.exists()) setUser(buildUser(fbUser.uid, snap.data(), fbUser.email));
     });
     return unsub;
   }, [fbUser?.uid]);
 
-  // Login: look up email by phone in Firestore, then sign in with that email
   const login = async (phone: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const clean = phone.replace(/\s+/g, "");
     if (!clean) return { success: false, error: "Please enter your phone number." };
@@ -174,8 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const q = query(collection(db, "users"), where("phone", "==", clean));
       const qs = await getDocs(q);
       if (qs.empty) return { success: false, error: "No account found with this phone number." };
-      const userData = qs.docs[0].data();
-      const email = userData.email;
+      const email = qs.docs[0].data().email;
       if (!email) return { success: false, error: "Account error. Please contact support." };
       await signInWithEmailAndPassword(auth, email, password);
       return { success: true };
@@ -189,11 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (
-    firstName: string,
-    lastName: string,
-    phone: string,
-    email: string,
-    password: string,
+    firstName: string, lastName: string, phone: string, email: string, password: string,
   ): Promise<{ success: boolean; error?: string }> => {
     const cleanFirst = firstName.trim();
     const cleanLast = lastName.trim();
@@ -207,7 +190,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (password.length < 6) return { success: false, error: "Password must be at least 6 characters." };
 
     try {
-      // Check phone not already used
       const phoneQ = query(collection(db, "users"), where("phone", "==", clean));
       const phoneSnap = await getDocs(phoneQ);
       if (!phoneSnap.empty) return { success: false, error: "An account with this phone number already exists." };
@@ -219,65 +201,95 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const referralCode = genCode(clean);
 
       await setDoc(doc(db, "users", uid), {
-        name: fullName,
-        phone: clean,
-        email: cleanEmail,
-        balance: 0,
-        bonus: 37000,
-        winnings: 0,
-        joinedDate,
-        referralCode,
-        usedReferrals: [],
-        status: "active",
-        riskLevel: "low",
-        totalDeposited: 0,
-        totalWithdrawn: 0,
-        pendingBetAmount: 0,
-        totalBets: 0,
-        wonBets: 0,
-        lostBets: 0,
-        pendingBets: 0,
-        country: "Uganda",
-        device: "Web",
-        lastSeen: nowString(),
-        notifications: [],
-        createdAt: serverTimestamp(),
+        name: fullName, phone: clean, email: cleanEmail,
+        balance: 0, bonus: 37000, winnings: 0, joinedDate, referralCode,
+        usedReferrals: [], status: "active", riskLevel: "low",
+        totalDeposited: 0, totalWithdrawn: 0, pendingBetAmount: 0,
+        totalBets: 0, wonBets: 0, lostBets: 0, pendingBets: 0,
+        country: "Uganda", device: "Web", lastSeen: nowString(),
+        notifications: [], createdAt: serverTimestamp(),
       });
-
-      await addTransaction(uid, {
-        type: "bonus",
-        amount: 37000,
-        description: "Welcome Bonus credited",
-        status: "completed",
-      });
-
+      await addTransaction(uid, { type: "bonus", amount: 37000, description: "Welcome Bonus credited", status: "completed" });
       return { success: true };
     } catch (err: any) {
       const code = err?.code ?? "";
-      if (code === "auth/email-already-in-use") {
-        return { success: false, error: "An account with this email already exists." };
-      }
+      if (code === "auth/email-already-in-use") return { success: false, error: "An account with this email already exists." };
       return { success: false, error: "Registration failed. Please try again." };
     }
   };
 
-  const logout = async () => {
-    await signOut(auth);
+  // ── GOOGLE SIGN-IN ──
+  const signInWithGoogle = async (): Promise<{ success: boolean; needsPhone?: boolean; error?: string }> => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const fbU = result.user;
+      const snap = await getDoc(doc(db, "users", fbU.uid));
+
+      if (snap.exists() && snap.data().phone) {
+        // Returning Google user — already has a profile
+        setUser(buildUser(fbU.uid, snap.data(), fbU.email));
+        return { success: true, needsPhone: false };
+      }
+
+      // New Google user — need phone number
+      return { success: true, needsPhone: true };
+    } catch (err: any) {
+      const code = err?.code ?? "";
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+        return { success: false, error: "" }; // silent — user closed popup
+      }
+      return { success: false, error: "Google sign-in failed. Please try again." };
+    }
   };
+
+  // Complete signup for Google users who need to add a phone number
+  const completeGoogleSignup = async (phone: string, dialCode: string): Promise<{ success: boolean; error?: string }> => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return { success: false, error: "Session expired. Please try again." };
+
+    const fullPhone = (dialCode + phone.replace(/\s+/g, "")).replace(/\+\+/, "+");
+    const localPhone = phone.replace(/\s+/g, "");
+
+    if (!localPhone || localPhone.length < 7) return { success: false, error: "Please enter a valid phone number." };
+
+    try {
+      // Check phone not already used
+      const phoneQ = query(collection(db, "users"), where("phone", "==", fullPhone));
+      const phoneSnap = await getDocs(phoneQ);
+      if (!phoneSnap.empty) return { success: false, error: "This phone number is already linked to another account." };
+
+      const displayName = currentUser.displayName ?? "BetMali User";
+      const email = currentUser.email ?? "";
+      const joinedDate = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+      const referralCode = genCode(fullPhone);
+
+      await setDoc(doc(db, "users", currentUser.uid), {
+        name: displayName, phone: fullPhone, email,
+        balance: 0, bonus: 37000, winnings: 0, joinedDate, referralCode,
+        usedReferrals: [], status: "active", riskLevel: "low",
+        totalDeposited: 0, totalWithdrawn: 0, pendingBetAmount: 0,
+        totalBets: 0, wonBets: 0, lostBets: 0, pendingBets: 0,
+        country: "Uganda", device: "Web", lastSeen: nowString(),
+        notifications: [], createdAt: serverTimestamp(), loginMethod: "google",
+      });
+      await addTransaction(currentUser.uid, { type: "bonus", amount: 37000, description: "Welcome Bonus credited", status: "completed" });
+      return { success: true };
+    } catch {
+      return { success: false, error: "Failed to save your phone number. Please try again." };
+    }
+  };
+
+  const logout = async () => { await signOut(auth); };
 
   const forgotPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
     const cleanEmail = email.trim().toLowerCase();
-    if (!cleanEmail || !cleanEmail.includes("@")) {
-      return { success: false, error: "Please enter a valid email address." };
-    }
+    if (!cleanEmail || !cleanEmail.includes("@")) return { success: false, error: "Please enter a valid email address." };
     try {
       await sendPasswordResetEmail(auth, cleanEmail);
       return { success: true };
     } catch (err: any) {
       const code = err?.code ?? "";
-      if (code === "auth/user-not-found") {
-        return { success: false, error: "No account found with this email address." };
-      }
+      if (code === "auth/user-not-found") return { success: false, error: "No account found with this email address." };
       return { success: false, error: "Failed to send reset email. Please try again." };
     }
   };
@@ -304,9 +316,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!fbUser) return;
     const patch: Record<string, any> = {};
     if (updates.name) patch.name = updates.name;
-    if (Object.keys(patch).length) {
-      await updateDoc(doc(db, "users", fbUser.uid), patch);
-    }
+    if (Object.keys(patch).length) await updateDoc(doc(db, "users", fbUser.uid), patch);
   };
 
   const deposit = async (amount: number, method: string): Promise<{ success: boolean; error?: string }> => {
@@ -314,21 +324,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (amount < 1000) return { success: false, error: "Minimum deposit is UGX 1,000." };
     if (amount > 10000000) return { success: false, error: "Maximum deposit is UGX 10,000,000." };
     try {
-      await updateDoc(doc(db, "users", fbUser.uid), {
-        balance: increment(amount),
-        totalDeposited: increment(amount),
-        lastSeen: nowString(),
-      });
-      await addTransaction(fbUser.uid, {
-        type: "deposit",
-        amount,
-        description: `Deposit via ${method}`,
-        status: "completed",
-      });
+      await updateDoc(doc(db, "users", fbUser.uid), { balance: increment(amount), totalDeposited: increment(amount), lastSeen: nowString() });
+      await addTransaction(fbUser.uid, { type: "deposit", amount, description: `Deposit via ${method}`, status: "completed" });
       return { success: true };
-    } catch {
-      return { success: false, error: "Deposit failed. Please try again." };
-    }
+    } catch { return { success: false, error: "Deposit failed. Please try again." }; }
   };
 
   const withdraw = async (amount: number, method: string, number: string): Promise<{ success: boolean; error?: string }> => {
@@ -337,51 +336,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (amount > user.balance) return { success: false, error: "Insufficient balance." };
     if (!number.trim()) return { success: false, error: "Please enter your mobile money number." };
     try {
-      await updateDoc(doc(db, "users", fbUser.uid), {
-        balance: increment(-amount),
-        totalWithdrawn: increment(amount),
-        lastSeen: nowString(),
-      });
-      await addTransaction(fbUser.uid, {
-        type: "withdraw",
-        amount,
-        description: `Withdrawal to ${method} (${number.trim()})`,
-        status: "completed",
-      });
+      await updateDoc(doc(db, "users", fbUser.uid), { balance: increment(-amount), totalWithdrawn: increment(amount), lastSeen: nowString() });
+      await addTransaction(fbUser.uid, { type: "withdraw", amount, description: `Withdrawal to ${method} (${number.trim()})`, status: "completed" });
       return { success: true };
-    } catch {
-      return { success: false, error: "Withdrawal failed. Please try again." };
-    }
+    } catch { return { success: false, error: "Withdrawal failed. Please try again." }; }
   };
 
   const creditBalance = async (amount: number, description: string): Promise<void> => {
     if (!fbUser) return;
-    await updateDoc(doc(db, "users", fbUser.uid), {
-      balance: increment(amount),
-      totalDeposited: increment(amount),
-      lastSeen: nowString(),
-    });
-    await addTransaction(fbUser.uid, {
-      type: "deposit",
-      amount,
-      description,
-      status: "completed",
-    });
+    await updateDoc(doc(db, "users", fbUser.uid), { balance: increment(amount), totalDeposited: increment(amount), lastSeen: nowString() });
+    await addTransaction(fbUser.uid, { type: "deposit", amount, description, status: "completed" });
   };
 
   const debitBalance = async (amount: number, description: string): Promise<void> => {
     if (!fbUser) return;
-    await updateDoc(doc(db, "users", fbUser.uid), {
-      balance: increment(-amount),
-      totalWithdrawn: increment(amount),
-      lastSeen: nowString(),
-    });
-    await addTransaction(fbUser.uid, {
-      type: "withdraw",
-      amount,
-      description,
-      status: "completed",
-    });
+    await updateDoc(doc(db, "users", fbUser.uid), { balance: increment(-amount), totalWithdrawn: increment(amount), lastSeen: nowString() });
+    await addTransaction(fbUser.uid, { type: "withdraw", amount, description, status: "completed" });
   };
 
   const claimReferral = async (code: string): Promise<{ success: boolean; error?: string }> => {
@@ -398,37 +368,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const qs = await getDocs(q);
       if (qs.empty) return { success: false, error: "Invalid referral code. Please check and try again." };
       const referrerDoc = qs.docs[0];
-      await updateDoc(doc(db, "users", fbUser.uid), {
-        bonus: increment(500),
-        usedReferrals: [...used, cleaned],
-      });
-      await updateDoc(doc(db, "users", referrerDoc.id), {
-        bonus: increment(500),
-      });
-      await addTransaction(fbUser.uid, {
-        type: "referral",
-        amount: 500,
-        description: `Referral bonus from code ${cleaned}`,
-        status: "completed",
-      });
-      await addTransaction(referrerDoc.id, {
-        type: "referral",
-        amount: 500,
-        description: "Referral bonus — friend joined",
-        status: "completed",
-      });
+      await updateDoc(doc(db, "users", fbUser.uid), { bonus: increment(500), usedReferrals: [...used, cleaned] });
+      await updateDoc(doc(db, "users", referrerDoc.id), { bonus: increment(500) });
+      await addTransaction(fbUser.uid, { type: "referral", amount: 500, description: `Referral bonus from code ${cleaned}`, status: "completed" });
+      await addTransaction(referrerDoc.id, { type: "referral", amount: 500, description: "Referral bonus — friend joined", status: "completed" });
       return { success: true };
-    } catch {
-      return { success: false, error: "Could not process referral. Please try again." };
-    }
+    } catch { return { success: false, error: "Could not process referral. Please try again." }; }
   };
 
   return (
     <AuthContext.Provider value={{
       user, loading, transactions,
       login, register, logout, changePassword, updateProfile,
-      deposit, withdraw, claimReferral,
-      creditBalance, debitBalance, forgotPassword,
+      deposit, withdraw, claimReferral, creditBalance, debitBalance,
+      forgotPassword, signInWithGoogle, completeGoogleSignup,
     }}>
       {children}
     </AuthContext.Provider>
