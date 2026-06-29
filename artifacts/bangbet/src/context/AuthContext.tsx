@@ -47,7 +47,7 @@ interface AuthContextType {
   loading: boolean;
   transactions: Transaction[];
   login: (phone: string, password: string, dialCode?: string) => Promise<{ success: boolean; error?: string }>;
-  register: (firstName: string, lastName: string, phone: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (firstName: string, lastName: string, phone: string, email: string, password: string, country?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   updateProfile: (updates: Partial<Pick<User, "name">>) => Promise<void>;
@@ -58,7 +58,7 @@ interface AuthContextType {
   debitBalance: (amount: number, description: string) => Promise<void>;
   forgotPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   signInWithGoogle: () => Promise<{ success: boolean; needsPhone?: boolean; error?: string }>;
-  completeGoogleSignup: (phone: string, dialCode: string) => Promise<{ success: boolean; error?: string }>;
+  completeGoogleSignup: (phone: string, dialCode: string, countryName?: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -182,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (
-    firstName: string, lastName: string, phone: string, email: string, password: string,
+    firstName: string, lastName: string, phone: string, email: string, password: string, country = "Uganda",
   ): Promise<{ success: boolean; error?: string }> => {
     const cleanFirst = firstName.trim();
     const cleanLast = lastName.trim();
@@ -212,7 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         usedReferrals: [], status: "active", riskLevel: "low",
         totalDeposited: 0, totalWithdrawn: 0, pendingBetAmount: 0,
         totalBets: 0, wonBets: 0, lostBets: 0, pendingBets: 0,
-        country: "Uganda", device: "Web", lastSeen: nowString(),
+        country, device: "Web", lastSeen: nowString(),
         notifications: [], createdAt: serverTimestamp(),
       });
       await addTransaction(uid, { type: "bonus", amount: 37000, description: "Welcome Bonus credited", status: "completed" });
@@ -249,7 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Complete signup for Google users who need to add a phone number
-  const completeGoogleSignup = async (phone: string, dialCode: string): Promise<{ success: boolean; error?: string }> => {
+  const completeGoogleSignup = async (phone: string, dialCode: string, countryName = "Uganda"): Promise<{ success: boolean; error?: string }> => {
     const currentUser = auth.currentUser;
     if (!currentUser) return { success: false, error: "Session expired. Please try again." };
 
@@ -275,7 +275,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         usedReferrals: [], status: "active", riskLevel: "low",
         totalDeposited: 0, totalWithdrawn: 0, pendingBetAmount: 0,
         totalBets: 0, wonBets: 0, lostBets: 0, pendingBets: 0,
-        country: "Uganda", device: "Web", lastSeen: nowString(),
+        country: countryName, device: "Web", lastSeen: nowString(),
         notifications: [], createdAt: serverTimestamp(), loginMethod: "google",
       });
       await addTransaction(currentUser.uid, { type: "bonus", amount: 37000, description: "Welcome Bonus credited", status: "completed" });

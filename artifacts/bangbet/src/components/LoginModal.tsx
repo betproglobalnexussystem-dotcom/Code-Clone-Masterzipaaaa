@@ -65,7 +65,12 @@ function CountryPhoneInput({ country, phone, onCountryChange, onPhoneChange, onE
             fontSize: 12, color: "var(--text-primary)", whiteSpace: "nowrap", height: "100%",
           }}
         >
-          <span style={{ fontSize: 17, lineHeight: 1 }}>{country.flag}</span>
+          <img
+            src={`https://flagcdn.com/w20/${country.code.toLowerCase()}.png`}
+            alt={country.name}
+            width={20} height={14}
+            style={{ objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
+          />
           <span style={{ fontWeight: 600 }}>{country.dial}</span>
           <ChevronDown size={10} style={{ color: "var(--text-muted)" }} />
         </button>
@@ -100,7 +105,12 @@ function CountryPhoneInput({ country, phone, onCountryChange, onPhoneChange, onE
                     color: "var(--text-primary)",
                   }}
                 >
-                  <span style={{ fontSize: 16, lineHeight: 1 }}>{c.flag}</span>
+                  <img
+                    src={`https://flagcdn.com/w20/${c.code.toLowerCase()}.png`}
+                    alt={c.name}
+                    width={20} height={14}
+                    style={{ objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
+                  />
                   <span style={{ flex: 1 }}>{c.name}</span>
                   <span style={{ color: "var(--text-muted)", fontSize: 10.5 }}>{c.dial}</span>
                 </button>
@@ -218,7 +228,7 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
     if (!agreedAge) { setError("You must confirm you are 25 years or older to register."); return; }
     setLoading(true);
     try {
-      const r = await register(firstName, lastName, fullPhone(regPhone), email, regPassword);
+      const r = await register(firstName, lastName, fullPhone(regPhone), email, regPassword, country.name);
       if (r.success) { setSuccess("Account created! Welcome to BetMali!"); setTimeout(onClose, 900); }
       else setError(r.error || "Registration failed.");
     } finally { setLoading(false); }
@@ -246,7 +256,7 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
   const handlePhonePrompt = async () => {
     clearMessages(); setLoading(true);
     try {
-      const r = await completeGoogleSignup(googlePhone, country.dial);
+      const r = await completeGoogleSignup(googlePhone, country.dial, country.name);
       if (r.success) { setSuccess("Account ready!"); setTimeout(onClose, 800); }
       else setError(r.error || "Failed to save phone number.");
     } finally { setLoading(false); }
