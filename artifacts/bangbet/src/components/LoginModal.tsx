@@ -26,6 +26,7 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
   const [email, setEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [showRegPassword, setShowRegPassword] = useState(false);
+  const [agreedAge, setAgreedAge] = useState(false);
 
   // Forgot password
   const [forgotEmail, setForgotEmail] = useState("");
@@ -56,6 +57,7 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
 
   const handleRegister = async () => {
     clearMessages();
+    if (!agreedAge) { setError("You must confirm you are 25 years or older to register."); return; }
     setLoading(true);
     try {
       const result = await register(firstName, lastName, regPhone, email, regPassword);
@@ -204,8 +206,21 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
               </div>
             </div>
 
-            <button className="btn-primary" onClick={handleRegister} disabled={loading}
-              style={{ opacity: loading ? 0.75 : 1, fontSize: 12.5, padding: "8px 14px", marginTop: 2 }}>
+            {/* Age agreement */}
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer", marginBottom: 10, marginTop: 4 }}>
+              <input
+                type="checkbox"
+                checked={agreedAge}
+                onChange={(e) => setAgreedAge(e.target.checked)}
+                style={{ marginTop: 2, accentColor: "var(--green)", width: 13, height: 13, flexShrink: 0, cursor: "pointer" }}
+              />
+              <span style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                I confirm I am <strong style={{ color: "var(--dark)" }}>25 years or older</strong> and agree to the Terms & Conditions
+              </span>
+            </label>
+
+            <button className="btn-primary" onClick={handleRegister} disabled={loading || !agreedAge}
+              style={{ opacity: loading || !agreedAge ? 0.6 : 1, fontSize: 12.5, padding: "8px 14px", marginTop: 0 }}>
               {loading ? "Please wait..." : <><UserPlus size={13} /> CREATE ACCOUNT</>}
             </button>
             <p style={{ fontSize: 11, color: "var(--text-secondary)", textAlign: "center", marginTop: 10, marginBottom: 0 }}>
