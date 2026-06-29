@@ -100,10 +100,14 @@ function apiMatchToMatch(m: ApiMatch, opts?: { boosted?: boolean }): Match | nul
   };
 }
 
-function apiBoostedToMatch(m: ApiMatch): Match | null {
+function apiBoostedToMatch(
+  m: ApiMatch,
+  fullBetMap?: import("../lib/api").BetMap
+): Match | null {
   const odds = getBoostedOdds(m.betMap);
   if (!odds) return null;
-  const dc = getDoubleChance(m.betMap);
+  // Prefer DC from the full betMap (regular match endpoint has all markets)
+  const dc = (fullBetMap ? getDoubleChance(fullBetMap) : null) ?? getDoubleChance(m.betMap);
   return {
     id: `b-${m.id}`,
     apiId: m.id,
@@ -309,9 +313,14 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
         // Sort upcoming by kickoff time ascending (earliest first)
         upcoming.sort((a, b) => (a.kickOffTime ?? 0) - (b.kickOffTime ?? 0));
 
+        // Build a lookup of full betMaps from the regular match pages
+        const fullBetMapById = new Map<number, import("../lib/api").BetMap>();
+        allRaw.forEach((m) => fullBetMapById.set(m.id, m.betMap));
+
         const boosted: Match[] = [];
         (boostedResp.esMatches || []).forEach((m) => {
-          const match = apiBoostedToMatch(m);
+          const fullBetMap = fullBetMapById.get(m.id);
+          const match = apiBoostedToMatch(m, fullBetMap);
           if (match) boosted.push(match);
         });
 
