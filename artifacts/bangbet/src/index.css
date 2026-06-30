@@ -278,7 +278,7 @@ input, select, textarea { font-family: inherit; outline: none; }
 }
 
 /* ===== BANNER ===== */
-.banner-slider { overflow: hidden; margin: 0; border-radius: 0; box-shadow: none; }
+.banner-slider { overflow: hidden; margin: 0 10px; border-radius: 10px; box-shadow: none; }
 
 .banner-slide {
   width: 100%;
