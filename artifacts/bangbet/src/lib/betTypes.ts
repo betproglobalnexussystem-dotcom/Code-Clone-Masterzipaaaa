@@ -466,8 +466,11 @@ export function parseBetMap(betMap: BetMap): ParsedMarket[] {
         return a.tt - b.tt;
       });
 
-      const unnamedCount = allSels.filter((s) => !def?.ttLabels[s.tt]).length;
-      if (unnamedCount === allSels.length && !def) return;
+      if (!def) {
+        allSels.forEach((s, i) => {
+          if (!s.label) s.label = positionLabel(i, allSels.length, s.tt);
+        });
+      }
 
       markets.push({
         bc,

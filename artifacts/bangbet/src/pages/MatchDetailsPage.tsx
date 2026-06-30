@@ -430,7 +430,7 @@ export default function MatchDetailsPage({ match, onBack, onAddBet, betSelection
                   <MarketGroup key={groupName} groupName={groupName} markets={markets} matchId={match.id}
                     homeTeam={match.homeTeam} awayTeam={match.awayTeam}
                     betSelections={betSelections} onAddBet={onAddBet}
-                    defaultOpen={groupName === "Main Markets"}
+                    defaultOpen={true}
                     apiMatchId={match.apiId} matchKickOffTime={match.kickOffTime} matchSport={match.sport} />
                 );
               })}

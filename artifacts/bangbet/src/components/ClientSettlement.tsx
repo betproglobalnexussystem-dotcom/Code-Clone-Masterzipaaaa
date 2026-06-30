@@ -152,6 +152,63 @@ async function settleBet(bet: StoredBet): Promise<void> {
   }
 }
 
+async function updateCashedOutSelections(bet: StoredBet): Promise<void> {
+  const selections = bet.selections.map((s) => ({ ...s }));
+  let anyUpdated = false;
+
+  for (let i = 0; i < selections.length; i++) {
+    const sel = selections[i];
+    if (sel.status !== "pending") continue;
+    if (!sel.matchId || !sel.kickOffTime) continue;
+
+    const rm = await getMatchResult(sel.matchId, sel.kickOffTime);
+    if (!rm) continue;
+
+    if (isMatchPostponed(rm)) {
+      if (sel.time !== "POSTPONED") { selections[i] = { ...sel, time: "POSTPONED" }; anyUpdated = true; }
+      continue;
+    }
+    if (isMatchAbandoned(rm)) {
+      if (sel.time !== "CANCELLED") { selections[i] = { ...sel, time: "CANCELLED" }; anyUpdated = true; }
+      continue;
+    }
+
+    if (isMatchLive(rm)) {
+      const live = getLiveScore(rm);
+      if (live) {
+        const period = getLivePeriod(rm);
+        const newScore = `${live.home} - ${live.away}`;
+        const newTime = period === "SECOND_HALF" ? "2nd Half"
+          : period === "FIRST_HALF" ? "1st Half"
+          : period === "PAUSE" ? "HT" : "LIVE";
+        if (sel.score !== newScore || sel.time !== newTime) {
+          selections[i] = { ...sel, score: newScore, time: newTime };
+          anyUpdated = true;
+        }
+        if (canResolveEarlyBttsYes(sel, live)) {
+          selections[i] = { ...selections[i], status: "won" };
+          anyUpdated = true;
+        }
+      }
+      continue;
+    }
+
+    if (isMatchEnded(rm)) {
+      const ft = getFullTimeScore(rm);
+      if (!ft) continue;
+      const ht = getHalfTimeScore(rm);
+      const r = resolveSelection(sel, ft, ht);
+      if (r === "pending") continue;
+      selections[i] = { ...sel, status: r, score: `${ft.home} - ${ft.away}`, time: "FT" };
+      anyUpdated = true;
+    }
+  }
+
+  if (anyUpdated) {
+    await updateDoc(doc(db, "bets", bet.id), { selections }).catch(() => {});
+  }
+}
+
 export default function ClientSettlement() {
   const { user } = useAuth();
   const runningRef = useRef(false);
@@ -160,13 +217,15 @@ export default function ClientSettlement() {
     if (runningRef.current) return;
     runningRef.current = true;
     try {
-      const snap = await getDocs(
-        query(collection(db, "bets"), where("userId", "==", uid), where("status", "==", "pending"))
-      );
-      if (snap.empty) return;
-      await Promise.all(
-        snap.docs.map((d) => settleBet({ id: d.id, ...(d.data() as Omit<StoredBet, "id">) }).catch(() => {}))
-      );
+      const [pendingSnap, cashedSnap] = await Promise.all([
+        getDocs(query(collection(db, "bets"), where("userId", "==", uid), where("status", "==", "pending"))),
+        getDocs(query(collection(db, "bets"), where("userId", "==", uid), where("status", "==", "cashed_out"))),
+      ]);
+      const jobs: Promise<void>[] = [
+        ...pendingSnap.docs.map((d) => settleBet({ id: d.id, ...(d.data() as Omit<StoredBet, "id">) }).catch(() => {})),
+        ...cashedSnap.docs.map((d) => updateCashedOutSelections({ id: d.id, ...(d.data() as Omit<StoredBet, "id">) }).catch(() => {})),
+      ];
+      if (jobs.length > 0) await Promise.all(jobs);
     } finally {
       runningRef.current = false;
     }
