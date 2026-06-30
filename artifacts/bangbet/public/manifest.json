@@ -1,0 +1,33 @@
+{
+  "name": "BetMali - Sports Betting",
+  "short_name": "BetMali",
+  "description": "Africa's sports betting platform. Bet on Football, Basketball, Rugby, Tennis and 20+ sports with live odds.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0e1117",
+  "theme_color": "#1a8a2e",
+  "lang": "en",
+  "categories": ["sports", "entertainment", "finance"],
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "/favicon.svg", "sizes": "192x192", "type": "image/svg+xml" },
+    { "src": "/favicon.svg", "sizes": "512x512", "type": "image/svg+xml" }
+  ],
+  "screenshots": [
+    {
+      "src": "/opengraph.jpg",
+      "sizes": "1200x630",
+      "type": "image/jpeg",
+      "label": "BetMali Sports Betting Homepage"
+    }
+  ],
+  "shortcuts": [
+    { "name": "Sports Betting", "url": "/sports", "description": "Bet on your favourite sports" },
+    { "name": "Live Betting",   "url": "/live",   "description": "In-play live betting" },
+    { "name": "Results",        "url": "/results","description": "Latest match results" }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

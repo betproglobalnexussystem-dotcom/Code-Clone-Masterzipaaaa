@@ -1,2 +1,71 @@
+# BetMali - Sports Betting Platform
+# https://betmali.site/robots.txt
+
 User-agent: *
 Allow: /
+
+# Block private/account pages
+Disallow: /*/account
+Disallow: /*/profile
+Disallow: /*/notifications
+Disallow: /admin
+Disallow: /*/admin
+
+# Allow all public pages
+Allow: /ug
+Allow: /ke
+Allow: /tz
+Allow: /ng
+Allow: /gh
+Allow: /za
+Allow: /rw
+Allow: /et
+Allow: /zm
+Allow: /zw
+Allow: /mw
+Allow: /mz
+Allow: /cd
+Allow: /cm
+Allow: /sn
+Allow: /ci
+Allow: /eg
+Allow: /ma
+
+Allow: /*/sports
+Allow: /*/live
+Allow: /*/results
+Allow: /*/promotions
+
+# Allow major search engine bots explicitly
+User-agent: Googlebot
+Allow: /
+Disallow: /*/account
+Disallow: /admin
+
+User-agent: Bingbot
+Allow: /
+Disallow: /*/account
+Disallow: /admin
+
+User-agent: Slurp
+Allow: /
+Disallow: /*/account
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+# Crawl-delay for bots
+User-agent: *
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://betmali.site/sitemap.xml

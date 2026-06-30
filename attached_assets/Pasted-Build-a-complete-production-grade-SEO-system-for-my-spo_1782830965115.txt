@@ -1,0 +1,133 @@
+Build a complete production-grade SEO system for my sports betting website.
+
+Website Name: BETMALI
+
+Domain: https://betmali.site
+
+Target Country: Uganda
+
+Language: English
+
+Website Type: Sportsbook (Sports Betting Only)
+
+Do NOT mention or create pages for Aviator, Slots, Casino, or any casino games. BETMALI only offers sports betting.
+
+Target Sports:
+
+* Football
+* Basketball
+* Tennis
+* Rugby
+* Volleyball
+* Cricket
+* Boxing
+* MMA
+* Baseball
+* Ice Hockey
+* Handball
+* American Football
+* Formula 1
+* Motorsport
+* Cycling
+* Golf
+* Snooker
+* Darts
+* Esports
+* Live Betting
+
+Create a complete SEO-optimized website for Uganda with the following:
+
+1. Advanced HTML head tags.
+2. Dynamic title tags.
+3. Dynamic meta descriptions.
+4. Open Graph tags.
+5. Twitter Card tags.
+6. Canonical URLs.
+7. Robots meta tags.
+8. XML sitemap generation.
+9. robots.txt.
+10. Structured Data (JSON-LD) for:
+
+* Organization
+* Website
+* Breadcrumb
+* WebPage
+
+11. Clean SEO-friendly URLs.
+12. Internal linking optimization.
+13. Mobile-first SEO.
+14. Core Web Vitals optimization.
+15. Lazy loading for images.
+16. Image alt text optimization.
+17. Breadcrumb navigation.
+18. FAQ schema.
+19. Sportsbook homepage schema.
+20. Security headers.
+21. Fast page loading.
+22. Automatic meta generation for every page.
+23. Automatic canonical generation.
+24. Open Graph image support.
+25. XML sitemap auto-update.
+26. robots.txt allowing all major search engines.
+27. Google Search Console verification placeholder.
+28. Bing Webmaster verification placeholder.
+29. Favicon support.
+30. PWA manifest support.
+31. SEO-friendly pagination.
+32. Proper H1, H2, and H3 hierarchy.
+33. Accessible semantic HTML.
+34. Structured homepage optimized for Uganda.
+
+Homepage SEO
+
+Title:
+BETMALI Uganda | Sports Betting, Live Betting & Football Odds
+
+Meta Description:
+BETMALI is a sports betting platform for Uganda offering football, basketball, rugby, tennis, cricket, volleyball, boxing, MMA and many more sports with live betting and competitive odds.
+
+Homepage H1:
+BETMALI Uganda Sports Betting
+
+Homepage H2:
+Football Betting
+Live Betting
+Basketball Betting
+Tennis Betting
+Rugby Betting
+Cricket Betting
+Volleyball Betting
+Boxing Betting
+MMA Betting
+Motorsport Betting
+
+Create SEO landing pages for:
+
+* Football Betting Uganda
+* Live Betting Uganda
+* Basketball Betting Uganda
+* Rugby Betting Uganda
+* Tennis Betting Uganda
+* Cricket Betting Uganda
+* Volleyball Betting Uganda
+
+Every page must have:
+
+* Unique Title
+* Unique Meta Description
+* Unique H1
+* Schema Markup
+* Internal Links
+* Canonical URL
+
+Generate a complete robots.txt.
+
+Generate a complete sitemap.xml.
+
+Generate JSON-LD structured data.
+
+Optimize everything for Google, Bing, Yahoo and DuckDuckGo.
+
+Use only white-hat SEO practices that follow search engine guidelines.
+
+The code should be production-ready and compatible with Replit.

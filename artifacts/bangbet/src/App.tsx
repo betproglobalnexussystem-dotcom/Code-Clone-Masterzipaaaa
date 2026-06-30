@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { COUNTRIES } from "./lib/countries";
+import { getCountryFromURL } from "./lib/seo";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import SEO from "./components/SEO";
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
 import DesktopSidebar from "./components/DesktopSidebar";
@@ -163,6 +165,7 @@ function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {
 
   return (
     <div id="root">
+      <SEO page={activePage} countryCode={getCountryFromURL()} />
       <PendingPaymentRecovery />
       <ClientSettlement />
       <Header onLoginClick={openLogin} onRegisterClick={openRegister} onHomeClick={() => { setSelectedMatch(null); setActivePage("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }} />

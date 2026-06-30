@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- Uganda -->
+  <url><loc>https://betmali.site/ug</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://betmali.site/ug/sports</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://betmali.site/ug/live</loc><changefreq>always</changefreq><priority>0.9</priority></url>
+  <url><loc>https://betmali.site/ug/results</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://betmali.site/ug/promotions</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+
+  <!-- Kenya -->
+  <url><loc>https://betmali.site/ke</loc><changefreq>daily</changefreq><priority>0.95</priority></url>
+  <url><loc>https://betmali.site/ke/sports</loc><changefreq>daily</changefreq><priority>0.85</priority></url>
+  <url><loc>https://betmali.site/ke/live</loc><changefreq>always</changefreq><priority>0.85</priority></url>
+  <url><loc>https://betmali.site/ke/results</loc><changefreq>daily</changefreq><priority>0.65</priority></url>
+  <url><loc>https://betmali.site/ke/promotions</loc><changefreq>weekly</changefreq><priority>0.75</priority></url>
+
+  <!-- Tanzania -->
+  <url><loc>https://betmali.site/tz</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://betmali.site/tz/sports</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://betmali.site/tz/live</loc><changefreq>always</changefreq><priority>0.8</priority></url>
+  <url><loc>https://betmali.site/tz/results</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://betmali.site/tz/promotions</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+
+  <!-- Nigeria -->
+  <url><loc>https://betmali.site/ng</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://betmali.site/ng/sports</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://betmali.site/ng/live</loc><changefreq>always</changefreq><priority>0.8</priority></url>
+  <url><loc>https://betmali.site/ng/results</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://betmali.site/ng/promotions</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+
+  <!-- Ghana -->
+  <url><loc>https://betmali.site/gh</loc><changefreq>daily</changefreq><priority>0.85</priority></url>
+  <url><loc>https://betmali.site/gh/sports</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://betmali.site/gh/live</loc><changefreq>always</changefreq><priority>0.75</priority></url>
+  <url><loc>https://betmali.site/gh/results</loc><changefreq>daily</changefreq><priority>0.55</priority></url>
+  <url><loc>https://betmali.site/gh/promotions</loc><changefreq>weekly</changefreq><priority>0.65</priority></url>
+
+  <!-- South Africa -->
+  <url><loc>https://betmali.site/za</loc><changefreq>daily</changefreq><priority>0.85</priority></url>
+  <url><loc>https://betmali.site/za/sports</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://betmali.site/za/live</loc><changefreq>always</changefreq><priority>0.75</priority></url>
+  <url><loc>https://betmali.site/za/results</loc><changefreq>daily</changefreq><priority>0.55</priority></url>
+  <url><loc>https://betmali.site/za/promotions</loc><changefreq>weekly</changefreq><priority>0.65</priority></url>
+
+  <!-- Rwanda -->
+  <url><loc>https://betmali.site/rw</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://betmali.site/rw/sports</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://betmali.site/rw/live</loc><changefreq>always</changefreq><priority>0.7</priority></url>
+  <url><loc>https://betmali.site/rw/results</loc><changefreq>daily</changefreq><priority>0.5</priority></url>
+  <url><loc>https://betmali.site/rw/promotions</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+
+  <!-- Ethiopia -->
+  <url><loc>https://betmali.site/et</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://betmali.site/et/sports</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://betmali.site/et/live</loc><changefreq>always</changefreq><priority>0.7</priority></url>
+  <url><loc>https://betmali.site/et/results</loc><changefreq>daily</changefreq><priority>0.5</priority></url>
+  <url><loc>https://betmali.site/et/promotions</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+
+  <!-- Zambia -->
+  <url><loc>https://betmali.site/zm</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://betmali.site/zm/sports</loc><changefreq>daily</changefreq><priority>0.65</priority></url>
+  <url><loc>https://betmali.site/zm/live</loc><changefreq>always</changefreq><priority>0.65</priority></url>
+  <url><loc>https://betmali.site/zm/results</loc><changefreq>daily</changefreq><priority>0.5</priority></url>
+  <url><loc>https://betmali.site/zm/promotions</loc><changefreq>weekly</changefreq><priority>0.55</priority></url>
+
+  <!-- Zimbabwe -->
+  <url><loc>https://betmali.site/zw</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://betmali.site/zw/sports</loc><changefreq>daily</changefreq><priority>0.65</priority></url>
+  <url><loc>https://betmali.site/zw/live</loc><changefreq>always</changefreq><priority>0.65</priority></url>
+  <url><loc>https://betmali.site/zw/results</loc><changefreq>daily</changefreq><priority>0.5</priority></url>
+  <url><loc>https://betmali.site/zw/promotions</loc><changefreq>weekly</changefreq><priority>0.55</priority></url>
+
+  <!-- Malawi -->
+  <url><loc>https://betmali.site/mw</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://betmali.site/mw/sports</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://betmali.site/mw/live</loc><changefreq>always</changefreq><priority>0.6</priority></url>
+  <url><loc>https://betmali.site/mw/results</loc><changefreq>daily</changefreq><priority>0.45</priority></url>
+  <url><loc>https://betmali.site/mw/promotions</loc><changefreq>weekly</changefreq><priority>0.5</priority></url>
+
+  <!-- Mozambique -->
+  <url><loc>https://betmali.site/mz</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://betmali.site/mz/sports</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://betmali.site/mz/live</loc><changefreq>always</changefreq><priority>0.6</priority></url>
+  <url><loc>https://betmali.site/mz/results</loc><changefreq>daily</changefreq><priority>0.45</priority></url>
+  <url><loc>https://betmali.site/mz/promotions</loc><changefreq>weekly</changefreq><priority>0.5</priority></url>
+
+  <!-- DR Congo -->
+  <url><loc>https://betmali.site/cd</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://betmali.site/cd/sports</loc><changefreq>daily</changefreq><priority>0.65</priority></url>
+  <url><loc>https://betmali.site/cd/live</loc><changefreq>always</changefreq><priority>0.65</priority></url>
+  <url><loc>https://betmali.site/cd/results</loc><changefreq>daily</changefreq><priority>0.5</priority></url>
+  <url><loc>https://betmali.site/cd/promotions</loc><changefreq>weekly</changefreq><priority>0.55</priority></url>
+
+  <!-- Cameroon -->
+  <url><loc>https://betmali.site/cm</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://betmali.site/cm/sports</loc><changefreq>daily</changefreq><priority>0.65</priority></url>
+  <url><loc>https://betmali.site/cm/live</loc><changefreq>always</changefreq><priority>0.65</priority></url>
+  <url><loc>https://betmali.site/cm/results</loc><changefreq>daily</changefreq><priority>0.5</priority></url>
+  <url><loc>https://betmali.site/cm/promotions</loc><changefreq>weekly</changefreq><priority>0.55</priority></url>
+
+  <!-- Senegal -->
+  <url><loc>https://betmali.site/sn</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://betmali.site/sn/sports</loc><changefreq>daily</changefreq><priority>0.65</priority></url>
+  <url><loc>https://betmali.site/sn/live</loc><changefreq>always</changefreq><priority>0.65</priority></url>
+  <url><loc>https://betmali.site/sn/results</loc><changefreq>daily</changefreq><priority>0.5</priority></url>
+  <url><loc>https://betmali.site/sn/promotions</loc><changefreq>weekly</changefreq><priority>0.55</priority></url>
+
+  <!-- Ivory Coast -->
+  <url><loc>https://betmali.site/ci</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://betmali.site/ci/sports</loc><changefreq>daily</changefreq><priority>0.65</priority></url>
+  <url><loc>https://betmali.site/ci/live</loc><changefreq>always</changefreq><priority>0.65</priority></url>
+  <url><loc>https://betmali.site/ci/results</loc><changefreq>daily</changefreq><priority>0.5</priority></url>
+  <url><loc>https://betmali.site/ci/promotions</loc><changefreq>weekly</changefreq><priority>0.55</priority></url>
+
+  <!-- Egypt -->
+  <url><loc>https://betmali.site/eg</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://betmali.site/eg/sports</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://betmali.site/eg/live</loc><changefreq>always</changefreq><priority>0.7</priority></url>
+  <url><loc>https://betmali.site/eg/results</loc><changefreq>daily</changefreq><priority>0.55</priority></url>
+  <url><loc>https://betmali.site/eg/promotions</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+
+  <!-- Morocco -->
+  <url><loc>https://betmali.site/ma</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://betmali.site/ma/sports</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://betmali.site/ma/live</loc><changefreq>always</changefreq><priority>0.7</priority></url>
+  <url><loc>https://betmali.site/ma/results</loc><changefreq>daily</changefreq><priority>0.55</priority></url>
+  <url><loc>https://betmali.site/ma/promotions</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+
+</urlset>
