@@ -421,10 +421,11 @@ export function parseBetMap(betMap: BetMap): ParsedMarket[] {
 
   bcGroups.forEach((svGroup, bc) => {
     const def = MARKET_BY_BC.get(bc);
-    const name = def?.name ?? `Market ${bc}`;
-    const group = def?.group ?? "Other";
-    const priority = def?.priority ?? 99;
-    const ouMarket = def?.ouMarket ?? false;
+    if (!def) return; // skip markets with no known definition
+    const name = def.name;
+    const group = def.group;
+    const priority = def.priority;
+    const ouMarket = def.ouMarket ?? false;
 
     if (ouMarket && svGroup.size > 1) {
       svGroup.forEach((sels, sv) => {

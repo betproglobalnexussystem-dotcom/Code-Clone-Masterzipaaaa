@@ -209,6 +209,16 @@ async function updateCashedOutSelections(bet: StoredBet): Promise<void> {
   }
 }
 
+// Try the serverless API first; fall back to direct Firestore settlement.
+async function callApiSettle(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/settle", { signal: AbortSignal.timeout(8_000) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export default function ClientSettlement() {
   const { user } = useAuth();
   const runningRef = useRef(false);
@@ -217,15 +227,21 @@ export default function ClientSettlement() {
     if (runningRef.current) return;
     runningRef.current = true;
     try {
-      const [pendingSnap, cashedSnap] = await Promise.all([
-        getDocs(query(collection(db, "bets"), where("userId", "==", uid), where("status", "==", "pending"))),
-        getDocs(query(collection(db, "bets"), where("userId", "==", uid), where("status", "==", "cashed_out"))),
-      ]);
-      const jobs: Promise<void>[] = [
-        ...pendingSnap.docs.map((d) => settleBet({ id: d.id, ...(d.data() as Omit<StoredBet, "id">) }).catch(() => {})),
-        ...cashedSnap.docs.map((d) => updateCashedOutSelections({ id: d.id, ...(d.data() as Omit<StoredBet, "id">) }).catch(() => {})),
-      ];
-      if (jobs.length > 0) await Promise.all(jobs);
+      // Primary: serverless backend handles ALL users' bets with admin access
+      const apiOk = await callApiSettle();
+
+      // Fallback: client-side settlement for this user only
+      if (!apiOk) {
+        const [pendingSnap, cashedSnap] = await Promise.all([
+          getDocs(query(collection(db, "bets"), where("userId", "==", uid), where("status", "==", "pending"))),
+          getDocs(query(collection(db, "bets"), where("userId", "==", uid), where("status", "==", "cashed_out"))),
+        ]);
+        const jobs: Promise<void>[] = [
+          ...pendingSnap.docs.map((d) => settleBet({ id: d.id, ...(d.data() as Omit<StoredBet, "id">) }).catch(() => {})),
+          ...cashedSnap.docs.map((d) => updateCashedOutSelections({ id: d.id, ...(d.data() as Omit<StoredBet, "id">) }).catch(() => {})),
+        ];
+        if (jobs.length > 0) await Promise.all(jobs);
+      }
     } finally {
       runningRef.current = false;
     }
@@ -235,7 +251,7 @@ export default function ClientSettlement() {
     if (!user?.uid) return;
     const uid = user.uid;
     runCycle(uid);
-    const interval = setInterval(() => runCycle(uid), 15_000);
+    const interval = setInterval(() => runCycle(uid), 2_000);
     return () => { clearInterval(interval); runningRef.current = false; };
   }, [user?.uid]);
 

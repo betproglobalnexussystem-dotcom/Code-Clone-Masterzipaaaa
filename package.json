@@ -9,7 +9,11 @@
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
   "private": true,
+  "dependencies": {
+    "firebase-admin": "^13.4.0"
+  },
   "devDependencies": {
+    "@vercel/node": "^5.1.17",
     "prettier": "^3.8.3",
     "typescript": "~5.9.3"
   }
