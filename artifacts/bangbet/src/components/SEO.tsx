@@ -81,8 +81,8 @@ export default function SEO({ page, countryCode }: SEOProps) {
 
     // Manifest & Favicon
     setLink("manifest", "/manifest.json");
-    setLink("icon", "/favicon.svg");
-    setLink("apple-touch-icon", "/favicon.svg");
+    setLink("icon", "/betmali-logo.png");
+    setLink("apple-touch-icon", "/betmali-logo.png");
 
     // Verification placeholders (fill in real codes when available)
     setMeta("name", "google-site-verification", "REPLACE_WITH_GOOGLE_VERIFICATION_CODE");
