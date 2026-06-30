@@ -245,7 +245,7 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 /* ===== MAIN ===== */
 .main-content {
-  padding-top: 78px;
+  padding-top: 42px;
   padding-bottom: 62px;
   min-height: 100vh;
 }
