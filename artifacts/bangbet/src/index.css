@@ -1878,7 +1878,6 @@ input, select, textarea { font-family: inherit; outline: none; }
   .desktop-sidebar {
     background: #f5f5f7;
     border-right: none;
-    width: 210px;
   }
 
   .dsb-section-title {
