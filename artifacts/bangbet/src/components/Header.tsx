@@ -131,44 +131,43 @@ export default function Header({ onLoginClick, onRegisterClick, onHomeClick }: H
   const [showContact, setShowContact] = useState(false);
 
   return (
-    <header className="header" style={{ height: "auto", padding: "6px 12px", flexDirection: "column", alignItems: "stretch", gap: 4 }}>
+    <header className="header" style={{ height: "auto", padding: "5px 10px", flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 6, flexWrap: "nowrap", overflow: "hidden" }}>
 
-      {/* Row 1: Logo (left) + Clock (right) */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div className="header-logo" onClick={onHomeClick} style={{ cursor: "pointer" }}>
-          <span className="logo-text" style={{ fontSize: 24 }}>
-            <span className="logo-bet">BET</span><span className="logo-mali">MALI</span>
-          </span>
+      {/* Logo */}
+      <div className="header-logo" onClick={onHomeClick} style={{ cursor: "pointer", flexShrink: 0 }}>
+        <span className="logo-text" style={{ fontSize: 22 }}>
+          <span className="logo-bet">BET</span><span className="logo-mali">MALI</span>
+        </span>
+      </div>
+
+      {/* Right side: all controls in one line */}
+      <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0, flexWrap: "nowrap" }}>
+
+        {/* APP */}
+        <PurpleBtn icon={Download} label="APP" onClick={install} active={canInstall} />
+
+        {/* CONTACT */}
+        <div style={{ position: "relative" }}>
+          <PurpleBtn icon={Mail} label="CONTACT" onClick={() => setShowContact(v => !v)} active={showContact} />
+          {showContact && <ContactFloat onClose={() => setShowContact(false)} />}
         </div>
 
-        {/* Clock pill — purple, right side */}
+        {/* Clock */}
         <div style={{
-          display: "flex", alignItems: "center", gap: 5,
+          display: "flex", alignItems: "center", gap: 4,
           background: PURPLE, color: "#fff",
-          borderRadius: 8, padding: "4px 10px",
-          fontSize: 11, fontWeight: 700,
+          borderRadius: 8, padding: "4px 8px",
+          fontSize: 11, fontWeight: 700, flexShrink: 0,
           boxShadow: "0 2px 8px rgba(109,40,217,0.3)",
         }}>
           <Clock size={11} />
           <LiveClock />
         </div>
-      </div>
 
-      {/* Row 2: App + Contact (left) | Login + Register / Balance (right) */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 4 }}>
-        {/* Left: purple utility buttons */}
-        <div style={{ display: "flex", gap: 5 }}>
-          <PurpleBtn icon={Download} label="APP" onClick={install} active={canInstall} />
-          <div style={{ position: "relative" }}>
-            <PurpleBtn icon={Mail} label="CONTACT" onClick={() => setShowContact(v => !v)} active={showContact} />
-            {showContact && <ContactFloat onClose={() => setShowContact(false)} />}
-          </div>
-        </div>
-
-        {/* Right: auth */}
+        {/* Auth */}
         {user ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(45,169,98,0.12)", border: "1px solid rgba(45,169,98,0.35)", borderRadius: 18, padding: "4px 10px 4px 5px" }}>
-            <div style={{ width: 24, height: 24, borderRadius: "50%", background: "var(--green)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 700, fontFamily: "Oswald, sans-serif" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(45,169,98,0.12)", border: "1px solid rgba(45,169,98,0.35)", borderRadius: 18, padding: "4px 10px 4px 5px", flexShrink: 0 }}>
+            <div style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--green)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 10, fontWeight: 700, fontFamily: "Oswald, sans-serif" }}>
               {user.name.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -179,12 +178,12 @@ export default function Header({ onLoginClick, onRegisterClick, onHomeClick }: H
             </div>
           </div>
         ) : (
-          <div style={{ display: "flex", gap: 5 }}>
-            <button className="btn-login" onClick={onLoginClick} style={{ display: "flex", alignItems: "center", gap: 3, padding: "5px 12px", fontSize: 11 }}>
+          <>
+            <button className="btn-login" onClick={onLoginClick} style={{ display: "flex", alignItems: "center", gap: 3, padding: "5px 10px", fontSize: 11, whiteSpace: "nowrap" }}>
               <LogIn size={12} />LOGIN
             </button>
-            <button className="btn-register" onClick={onRegisterClick} style={{ padding: "5px 12px", fontSize: 11 }}>REGISTER</button>
-          </div>
+            <button className="btn-register" onClick={onRegisterClick} style={{ padding: "5px 10px", fontSize: 11, whiteSpace: "nowrap" }}>REGISTER</button>
+          </>
         )}
       </div>
     </header>
