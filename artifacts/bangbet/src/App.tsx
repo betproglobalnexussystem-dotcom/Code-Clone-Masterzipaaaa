@@ -8,6 +8,7 @@ import SportPage from "./pages/SportPage";
 import ResultsPage from "./pages/ResultsPage";
 import PromotionsPage from "./pages/PromotionsPage";
 import ProfilePage from "./pages/ProfilePage";
+import CasinoPage from "./pages/CasinoPage";
 import MatchDetailsPage from "./pages/MatchDetailsPage";
 import LoginModal from "./components/LoginModal";
 import BetSlip from "./components/BetSlip";
@@ -18,7 +19,7 @@ import ClientSettlement from "./components/ClientSettlement";
 import type { Match } from "./components/MatchCard";
 import "./index.css";
 
-export type Page = "home" | "sport" | "live" | "results" | "promotions" | "profile" | "notifications";
+export type Page = "home" | "sport" | "live" | "results" | "promotions" | "profile" | "notifications" | "slots";
 
 export interface BetSelection {
   id: string;
@@ -118,6 +119,8 @@ function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {
         return <ProfilePage onOpenLogin={openLogin} onOpenRegister={openRegister} onOpenAdmin={onOpenAdmin} />;
       case "notifications":
         return <NotificationsPage onBack={() => navigateTo("home")} />;
+      case "slots":
+        return <CasinoPage />;
       default:
         return (
           <HomePage

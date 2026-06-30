@@ -13,10 +13,11 @@ interface DesktopSidebarProps {
   onLeagueChange: (league: string) => void;
 }
 
-const NAV_ITEMS: { page: Page; label: string; icon: React.ElementType; accent?: string }[] = [
+const NAV_ITEMS: { page: Page; label: string; icon: React.ElementType; accent?: string; badge?: string }[] = [
   { page: "home",        label: "Home",       icon: Home },
   { page: "sport",       label: "Sports",     icon: Trophy },
-  { page: "live",        label: "Live",       icon: Radio,    accent: "#e53935" },
+  { page: "live",        label: "Live",       icon: Radio,      accent: "#e53935" },
+  { page: "slots",       label: "Casino",     icon: Gamepad2,   badge: "NEW" },
   { page: "results",     label: "Results",    icon: ClipboardList },
   { page: "promotions",  label: "Promotions", icon: Tag },
   { page: "profile",     label: "My Account", icon: User },
@@ -72,7 +73,7 @@ export default function DesktopSidebar({
       {/* Main nav */}
       <div className="dsb-section-title">MENU</div>
       <div className="dsb-nav-group">
-        {NAV_ITEMS.map(({ page, label, icon: Icon, accent }) => {
+        {NAV_ITEMS.map(({ page, label, icon: Icon, accent, badge }) => {
           const active = activePage === page;
           return (
             <div
@@ -85,14 +86,12 @@ export default function DesktopSidebar({
               {page === "live" && (
                 <span className="dsb-live-badge">LIVE</span>
               )}
+              {badge && page !== "live" && (
+                <span style={{ fontSize: 8, background: "var(--green)", color: "#fff", borderRadius: 5, padding: "1px 5px", fontWeight: 700, fontFamily: "Oswald, sans-serif" }}>{badge}</span>
+              )}
             </div>
           );
         })}
-        <div className="dsb-nav-item" style={{ opacity: 0.5, cursor: "default" }}>
-          <Gamepad2 size={15} color="var(--text-muted)" />
-          <span className="dsb-nav-label">Slots</span>
-          <span style={{ fontSize: 8, background: "var(--green)", color: "#fff", borderRadius: 5, padding: "1px 5px", fontWeight: 700, fontFamily: "Oswald, sans-serif" }}>NEW</span>
-        </div>
       </div>
 
       {/* Top Championships — shows leagues for current sport */}
