@@ -76,6 +76,7 @@
   "dependencies": {
     "@types/jsbarcode": "^3.11.4",
     "firebase": "^12.13.0",
-    "jsbarcode": "^3.12.3"
+    "jsbarcode": "^3.12.3",
+    "phaser": "^4.2.0"
   }
 }
