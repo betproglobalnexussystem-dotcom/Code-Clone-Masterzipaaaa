@@ -1655,10 +1655,34 @@ input, select, textarea { font-family: inherit; outline: none; }
   }
 }
 
-/* ── WIDE DESKTOP (≥ 1400px): constrain center content width ── */
+/* ── WIDE DESKTOP (≥ 1400px) ── */
 @media (min-width: 1400px) {
   .desktop-sidebar { width: 240px; }
   .desktop-right-panel { width: 240px; }
+}
+
+/* ── EXTRA WIDE (≥ 1600px) ── */
+@media (min-width: 1600px) {
+  .desktop-sidebar { width: 280px; }
+  .desktop-right-panel { width: 280px; }
+}
+
+/* ── FULL HD / 1080p (≥ 1920px) ── */
+@media (min-width: 1920px) {
+  .desktop-sidebar { width: 340px; }
+  .desktop-right-panel { width: 340px; }
+}
+
+/* ── 2K / QHD (≥ 2560px) ── */
+@media (min-width: 2560px) {
+  .desktop-sidebar { width: 440px; }
+  .desktop-right-panel { width: 440px; }
+}
+
+/* ── 4K / UHD (≥ 3200px) ── */
+@media (min-width: 3200px) {
+  .desktop-sidebar { width: 560px; }
+  .desktop-right-panel { width: 560px; }
 }
 
 /* ===== COMPACT MATCH ROW (table-style) ===== */

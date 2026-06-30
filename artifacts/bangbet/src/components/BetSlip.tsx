@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, X, CheckCircle, Zap, Gift, ChevronRight, AlertCircle, Loader, Ticket } from "lucide-react";
+import { FileText, X, CheckCircle, Zap, Gift, ChevronRight, AlertCircle, Loader, Ticket, Ban } from "lucide-react";
 import { addDoc, collection, serverTimestamp, updateDoc, doc, increment } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
@@ -427,26 +427,39 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
                 </button>
 
                 {isFriday && user && (
-                  <button
-                    onClick={handleFreeBet}
-                    disabled={placing || !freeBetAvailable}
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                      padding: c.btnPad, fontSize: c.btnFontSize,
-                      background: freeBetAvailable ? "linear-gradient(90deg, #92400e, #f59e0b)" : "rgba(156,163,175,0.2)",
-                      color: freeBetAvailable ? "#fff" : "var(--text-muted)",
-                      border: "none", borderRadius: 10, fontWeight: 800,
-                      fontFamily: "Oswald, sans-serif", letterSpacing: 0.5,
-                      cursor: freeBetAvailable && !placing ? "pointer" : "not-allowed",
-                      opacity: placing ? 0.75 : 1,
-                      transition: "opacity 0.2s",
-                    }}
-                  >
-                    <Ticket size={inline ? 13 : 18} />
-                    {freeBetAvailable
-                      ? `USE FREE BET — UGX ${FREE_BET_AMOUNT.toLocaleString()}`
-                      : "FREE BET USED THIS FRIDAY"}
-                  </button>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <button
+                      onClick={handleFreeBet}
+                      disabled={placing || !freeBetAvailable}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                        padding: c.btnPad, fontSize: c.btnFontSize,
+                        background: freeBetAvailable
+                          ? "linear-gradient(90deg, #92400e, #f59e0b)"
+                          : "rgba(156,163,175,0.15)",
+                        color: freeBetAvailable ? "#fff" : "var(--text-muted)",
+                        border: freeBetAvailable ? "none" : "1.5px solid rgba(156,163,175,0.4)",
+                        borderRadius: 10, fontWeight: 800,
+                        fontFamily: "Oswald, sans-serif", letterSpacing: 0.5,
+                        cursor: freeBetAvailable && !placing ? "pointer" : "not-allowed",
+                        opacity: freeBetAvailable ? 1 : 0.7,
+                        transition: "opacity 0.2s",
+                        textDecoration: freeBetAvailable ? "none" : "line-through",
+                      }}
+                    >
+                      {freeBetAvailable
+                        ? <><Ticket size={inline ? 13 : 18} /> USE FREE BET — UGX {FREE_BET_AMOUNT.toLocaleString()}</>
+                        : <><Ban size={inline ? 13 : 18} /> FREE BET ALREADY USED</>}
+                    </button>
+                    {!freeBetAvailable && (
+                      <div style={{
+                        fontSize: c.balanceSize, color: "var(--text-muted)",
+                        textAlign: "center", fontStyle: "italic",
+                      }}>
+                        ✓ You used your free bet this Friday. Come back next Friday!
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </>
