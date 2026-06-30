@@ -179,7 +179,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
   const [winnerNotice, setWinnerNotice] = useState("");
   const [bustFlash, setBustFlash] = useState(false);
   const [jackpotSub, setJackpotSub] = useState("Predict 13 games · Closes in 2h 34m");
-  const [noticeText, setNoticeText] = useState("Welcome Bonus: 100% up to UGX 370,000 on your first deposit! \u00a0\u00a0\u00a0 Jackpot of UGX 37,000,000 this weekend! \u00a0\u00a0\u00a0 Withdraw via Mobile Money in under 5 minutes!");
+  const [noticeText, setNoticeText] = useState("🏆 076****654 Won UGX 156,000,000 \u00a0\u00a0\u00a0 🏆 070****432 Won UGX 22,000,000 \u00a0\u00a0\u00a0 🏆 078****211 Won UGX 105,000,000 \u00a0\u00a0\u00a0 🏆 075****913 Won UGX 18,500,000 \u00a0\u00a0\u00a0 🏆 074****544 Won UGX 92,000,000 \u00a0\u00a0\u00a0");
   const unreadCount = useUnreadNotifCount();
   const [liveMatches, setLiveMatches] = useState<Match[]>(() => _homeCache.live);
   const [upcomingMatches, setUpcomingMatches] = useState<Match[]>(() => _homeCache.upcoming);
@@ -383,16 +383,6 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
     <div>
       {statsMatch && <StatsModal match={statsMatch} onClose={() => setStatsMatch(null)} />}
 
-      <div className="notice-bar">
-        <div style={{ position: "relative", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center" }} onClick={() => onNavigate("notifications")}>
-          <Bell size={13} className="notice-icon" />
-          {unreadCount > 0 && (
-            <span style={{ position: "absolute", top: -5, right: -5, background: "#ef4444", color: "#fff", fontSize: 8, fontWeight: 800, borderRadius: "50%", width: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>{unreadCount > 9 ? "9+" : unreadCount}</span>
-          )}
-        </div>
-        <div className="notice-scroll">{winnerNotice}{noticeText}</div>
-      </div>
-
       <div className="banner-slider">
         {fsBanner ? (
           <div
@@ -427,6 +417,16 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
             ))}
           </div>
         )}
+      </div>
+
+      <div className="notice-bar">
+        <div style={{ position: "relative", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center" }} onClick={() => onNavigate("notifications")}>
+          <Bell size={13} className="notice-icon" />
+          {unreadCount > 0 && (
+            <span style={{ position: "absolute", top: -5, right: -5, background: "#ef4444", color: "#fff", fontSize: 8, fontWeight: 800, borderRadius: "50%", width: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>{unreadCount > 9 ? "9+" : unreadCount}</span>
+          )}
+        </div>
+        <div className="notice-scroll">{winnerNotice}{noticeText}</div>
       </div>
 
       <div className="quick-nav">

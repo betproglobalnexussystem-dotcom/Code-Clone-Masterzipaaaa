@@ -252,16 +252,17 @@ input, select, textarea { font-family: inherit; outline: none; }
 
 /* ===== NOTICE BAR ===== */
 .notice-bar {
-  background-color: var(--dark);
+  background: linear-gradient(90deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
   padding: 7px 12px;
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: rgba(255,255,255,0.85);
+  color: rgba(255,255,255,0.9);
   overflow: hidden;
-  margin: 0;
-  border-radius: 0;
+  margin: 0 10px 8px;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 .notice-icon { color: #fff; flex-shrink: 0; }
