@@ -18,6 +18,7 @@ import AdminPage from "./pages/admin/AdminPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import PendingPaymentRecovery from "./components/PendingPaymentRecovery";
 import ClientSettlement from "./components/ClientSettlement";
+import LiveChat from "./components/LiveChat";
 import type { Match } from "./components/MatchCard";
 import "./index.css";
 
@@ -168,6 +169,7 @@ function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {
       <SEO page={activePage} countryCode={getCountryFromURL()} />
       <PendingPaymentRecovery />
       <ClientSettlement />
+      <LiveChat />
       <Header onLoginClick={openLogin} onRegisterClick={openRegister} onHomeClick={() => { setSelectedMatch(null); setActivePage("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
 
       {/* Desktop layout: sidebar + main + betslip */}

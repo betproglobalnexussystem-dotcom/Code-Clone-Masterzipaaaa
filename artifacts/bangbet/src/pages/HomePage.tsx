@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Bell, Globe, Gift, Zap, ChevronRight, Play, TrendingUp, Gamepad2, Loader2, Trophy } from "lucide-react";
+import { Bell, Globe, Gift, Zap, ChevronRight, Play, TrendingUp, Gamepad2, Trophy } from "lucide-react";
+import SkeletonHome from "../components/SkeletonHome";
 import type { BetSelection } from "../App";
 import type { Page } from "../App";
 import MatchCard, { type Match } from "../components/MatchCard";
@@ -417,11 +418,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
             <div style={{ width: 110, height: 110, flexShrink: 0, zIndex: 2 }} />
           </div>
         ) : (
-          <div className="banner-slide" style={{ background: "linear-gradient(135deg, #1a6e3d 0%, #2DA962 100%)", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: 32, height: 32, border: "3px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-            </div>
-          </div>
+          <div className="banner-slide" style={{ background: "linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%)", backgroundSize: "200% 100%", animation: "skeletonShimmer 1.4s infinite" }} />
         )}
         {bannerCount > 1 && (
           <div className="banner-dots">
@@ -466,12 +463,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
         <button className="jackpot-btn" onClick={onOpenLogin}><Play size={13} fill="currentColor" /> PLAY</button>
       </div>
 
-      {loading && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 32, gap: 10, color: "var(--text-muted)", background: "#fff" }}>
-          <Loader2 size={20} style={{ animation: "spin 1s linear infinite", color: "var(--green)" }} />
-          <span style={{ fontSize: 14, fontWeight: 500 }}>Loading matches...</span>
-        </div>
-      )}
+      {loading && <SkeletonHome />}
 
       {!loading && liveMatches.length > 0 && (
         <>
@@ -542,8 +534,10 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
           </span>
         </div>
         {loading ? (
-          <div style={{ padding: "24px", textAlign: "center", background: "#fff" }}>
-            <Loader2 size={18} style={{ animation: "spin 1s linear infinite", color: "var(--green)", display: "inline-block" }} />
+          <div style={{ padding: "12px", background: "#fff" }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} style={{ height: 52, borderRadius: 8, marginBottom: 6, background: "linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%)", backgroundSize: "200% 100%", animation: "skeletonShimmer 1.4s infinite" }} />
+            ))}
           </div>
         ) : (
           <>

@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Users, Ticket, Wallet, ArrowLeftRight, Image, Shield, Settings, LogOut, Eye, EyeOff, X, Menu, ChevronRight, Bell } from "lucide-react";
+import { LayoutDashboard, Users, Ticket, Wallet, ArrowLeftRight, Image, Shield, Settings, LogOut, Eye, EyeOff, X, Menu, ChevronRight, Bell, MessageCircle } from "lucide-react";
+import { collection, onSnapshot, query } from "firebase/firestore";
+import { db } from "../../lib/firebase";
 import { ADMIN_CREDENTIALS } from "./adminData";
 import DashboardTab from "./tabs/DashboardTab";
 import UsersTab from "./tabs/UsersTab";
@@ -10,8 +12,9 @@ import CarouselTab from "./tabs/CarouselTab";
 import SecurityTab from "./tabs/SecurityTab";
 import SettingsTab from "./tabs/SettingsTab";
 import NotificationsAdminTab from "./tabs/NotificationsAdminTab";
+import LiveChatTab from "./tabs/LiveChatTab";
 
-type AdminTab = "dashboard" | "users" | "bets" | "wallet" | "transactions" | "carousel" | "security" | "settings" | "notifications";
+type AdminTab = "dashboard" | "users" | "bets" | "wallet" | "transactions" | "carousel" | "security" | "settings" | "notifications" | "livechat";
 
 const NAV_ITEMS: { id: AdminTab; label: string; icon: any; badge?: number }[] = [
   { id: "dashboard",     label: "Dashboard",         icon: LayoutDashboard },
@@ -21,6 +24,7 @@ const NAV_ITEMS: { id: AdminTab; label: string; icon: any; badge?: number }[] = 
   { id: "transactions",  label: "Transactions",       icon: ArrowLeftRight },
   { id: "carousel",      label: "Carousel Manager",   icon: Image },
   { id: "notifications", label: "Notifications",      icon: Bell },
+  { id: "livechat",      label: "Live Chat",          icon: MessageCircle },
   { id: "security",      label: "Security",           icon: Shield },
   { id: "settings",      label: "Settings",           icon: Settings },
 ];
@@ -93,6 +97,16 @@ export default function AdminPage({ onExit }: { onExit: () => void }) {
   const [authed, setAuthed] = useState(false);
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [chatUnread, setChatUnread] = useState(0);
+
+  useEffect(() => {
+    const q = query(collection(db, "support_chats"));
+    const unsub = onSnapshot(q, snap => {
+      const total = snap.docs.reduce((a, d) => a + ((d.data().unreadAdmin as number) || 0), 0);
+      setChatUnread(total);
+    });
+    return unsub;
+  }, []);
 
   useEffect(() => {
     const root = document.getElementById("root");
@@ -113,6 +127,7 @@ export default function AdminPage({ onExit }: { onExit: () => void }) {
       case "transactions":  return <TransactionsTab />;
       case "carousel":      return <CarouselTab />;
       case "notifications": return <NotificationsAdminTab />;
+      case "livechat":      return <LiveChatTab />;
       case "security":      return <SecurityTab />;
       case "settings":      return <SettingsTab />;
       default:              return <DashboardTab />;
@@ -137,6 +152,7 @@ export default function AdminPage({ onExit }: { onExit: () => void }) {
         <nav style={{ flex: 1, padding: "12px 8px", overflowY: "auto" }}>
           {NAV_ITEMS.map(item => {
             const active = activeTab === item.id;
+            const badge = item.id === "livechat" ? chatUnread : item.badge;
             return (
               <div key={item.id} onClick={() => setActiveTab(item.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 10px", borderRadius: 10, marginBottom: 2, cursor: "pointer", background: active ? "rgba(45,169,98,0.15)" : "transparent", border: active ? "1px solid rgba(45,169,98,0.25)" : "1px solid transparent", transition: "all 0.15s", position: "relative" }}
                 onMouseEnter={e => !active && (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
@@ -145,10 +161,10 @@ export default function AdminPage({ onExit }: { onExit: () => void }) {
                 {sidebarOpen && (
                   <span style={{ fontSize: 13, fontWeight: 600, color: active ? "#fff" : "rgba(255,255,255,0.55)", whiteSpace: "nowrap", flex: 1 }}>{item.label}</span>
                 )}
-                {sidebarOpen && item.badge && (
-                  <span style={{ background: "#ef4444", color: "#fff", fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10 }}>{item.badge}</span>
+                {sidebarOpen && !!badge && (
+                  <span style={{ background: "#ef4444", color: "#fff", fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10 }}>{badge}</span>
                 )}
-                {!sidebarOpen && item.badge && (
+                {!sidebarOpen && !!badge && (
                   <div style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", background: "#ef4444" }} />
                 )}
               </div>
