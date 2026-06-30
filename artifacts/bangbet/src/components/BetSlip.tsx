@@ -70,22 +70,38 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
   const [freeBetSuccess, setFreeBetSuccess] = useState(false);
 
   const checkTicket = async () => {
-    const id = ticketInput.trim();
+    let id = ticketInput.trim();
     if (!id) return;
+    // Strip common prefixes users might copy from receipts
+    id = id.replace(/^(BET-|FB-)/i, "");
     setTicketError("");
     setTicketResult(null);
     setTicketLoading(true);
     try {
+      // Try exact ticketId match first
       const q = query(collection(db, "bets"), where("ticketId", "==", id));
       const snap = await getDocs(q);
-      if (snap.empty) {
-        setTicketError("No ticket found with that ID. Please check and try again.");
-      } else {
+      if (!snap.empty) {
         const d = snap.docs[0].data() as TicketResult;
         setTicketResult({ ...d, ticketId: id });
+      } else {
+        // Also try with string conversion (in case stored as number)
+        const q2 = query(collection(db, "bets"), where("ticketId", "==", Number(id)));
+        const snap2 = await getDocs(q2);
+        if (!snap2.empty) {
+          const d = snap2.docs[0].data() as TicketResult;
+          setTicketResult({ ...d, ticketId: id });
+        } else {
+          setTicketError("No ticket found with that ID. Your ticket ID can be found in My Account → My Bets.");
+        }
       }
-    } catch {
-      setTicketError("Failed to check ticket. Please try again.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("permission") || msg.includes("Missing or insufficient")) {
+        setTicketError("Please log in to check your ticket.");
+      } else {
+        setTicketError("Failed to check ticket. Please try again.");
+      }
     } finally {
       setTicketLoading(false);
     }

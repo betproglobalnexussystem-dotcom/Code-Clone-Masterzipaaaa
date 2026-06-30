@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Bell, Globe, Gift, Zap, ChevronRight, Play, TrendingUp, Gamepad2, Trophy } from "lucide-react";
 import SkeletonHome from "../components/SkeletonHome";
 import type { BetSelection } from "../App";
@@ -23,69 +23,6 @@ const _homeCache: {
   leagues: string[]; ready: boolean;
 } = { live: [], upcoming: [], boosted: [], leagues: ["All"], ready: false };
 
-const REEL = Array.from({ length: 60 }, (_, i) => i % 10);
-
-function SlotDigit({ digit, height, posFromRight, tier }: { digit: number; height: number; posFromRight: number; tier: "gold" | "silver" | "bronze" }) {
-  const prevRef = useRef(digit);
-  const accumRef = useRef(digit);
-  const [pos, setPos] = useState(digit);
-  const [animated, setAnimated] = useState(true);
-
-  useEffect(() => {
-    const prev = prevRef.current;
-    if (digit === prev) return;
-    const steps = digit > prev ? digit - prev : (10 - prev + digit);
-    prevRef.current = digit;
-    const newAccum = accumRef.current + steps;
-    if (newAccum >= 50) {
-      const resetTo = newAccum % 10;
-      setAnimated(false);
-      setPos(resetTo);
-      accumRef.current = resetTo;
-      requestAnimationFrame(() => requestAnimationFrame(() => setAnimated(true)));
-    } else {
-      accumRef.current = newAccum;
-      setPos(newAccum);
-    }
-  }, [digit]);
-
-  const baseDur = tier === "gold" ? 0.18 : tier === "silver" ? 0.65 : 2.0;
-  const dur = baseDur + posFromRight * (tier === "gold" ? 0.07 : tier === "silver" ? 0.22 : 0.7);
-  const clr = tier === "gold" ? "#FFD700" : tier === "silver" ? "#D8D8D8" : "#CD9B6A";
-
-  return (
-    <span style={{ display: "inline-block", overflow: "hidden", height, verticalAlign: "top" }}>
-      <span style={{
-        display: "flex", flexDirection: "column",
-        transform: `translateY(-${pos * height}px)`,
-        transition: animated ? `transform ${dur}s cubic-bezier(0.25, 0.46, 0.45, 0.94)` : "none",
-        willChange: "transform", color: clr, fontWeight: 900,
-      }}>
-        {REEL.map((d, i) => (
-          <span key={i} style={{ height, lineHeight: `${height}px`, display: "block", textAlign: "center" }}>{d}</span>
-        ))}
-      </span>
-    </span>
-  );
-}
-
-function TierCounter({ value, tier, fontSize = 18 }: { value: number; tier: "gold" | "silver" | "bronze"; fontSize?: number }) {
-  const h = Math.ceil(fontSize * 1.22);
-  const formatted = Math.max(0, Math.floor(value)).toLocaleString();
-  const chars = formatted.split("");
-  let dIdx = 0;
-  const rightCounts = [...chars].reverse().map(c => !isNaN(parseInt(c)) ? dIdx++ : -1).reverse();
-  const sepClr = tier === "gold" ? "rgba(255,215,0,0.5)" : tier === "silver" ? "rgba(216,216,216,0.5)" : "rgba(205,155,106,0.5)";
-  return (
-    <span style={{ display: "inline-flex", alignItems: "flex-start", fontFamily: "Oswald, monospace", fontWeight: 900, fontSize, lineHeight: `${h}px`, letterSpacing: 0.5 }}>
-      {chars.map((char, i) => {
-        const fr = rightCounts[i];
-        if (fr === -1) return <span key={i} style={{ height: h, lineHeight: `${h}px`, color: sepClr, display: "inline-block" }}>{char}</span>;
-        return <SlotDigit key={i} digit={parseInt(char)} height={h} posFromRight={fr} tier={tier} />;
-      })}
-    </span>
-  );
-}
 
 function LeagueFlag({ leagueName }: { leagueName: string }) {
   const url = getLeagueFlagUrl(leagueName);
@@ -201,13 +138,6 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
   const [activeBanner, setActiveBanner] = useState(0);
   const [firestoreBanners, setFirestoreBanners] = useState<FirestoreBanner[]>([]);
   const [bannersLoaded, setBannersLoaded] = useState(false);
-  const [jackpot, setJackpot] = useState(37_000_000);
-  const [displayJackpot, setDisplayJackpot] = useState(0);
-  const [bustTarget, setBustTarget] = useState(0);
-  const [isBusting, setIsBusting] = useState(false);
-  const [winnerNotice, setWinnerNotice] = useState("");
-  const [bustFlash, setBustFlash] = useState(false);
-  const [jackpotSub, setJackpotSub] = useState("Predict 13 games · Closes in 2h 34m");
   const [noticeText, setNoticeText] = useState("🏆 076****654 Won UGX 156,000,000 \u00a0\u00a0\u00a0 🏆 070****432 Won UGX 22,000,000 \u00a0\u00a0\u00a0 🏆 078****211 Won UGX 105,000,000 \u00a0\u00a0\u00a0 🏆 075****913 Won UGX 18,500,000 \u00a0\u00a0\u00a0 🏆 074****544 Won UGX 92,000,000 \u00a0\u00a0\u00a0");
   const unreadCount = useUnreadNotifCount();
   const [liveMatches, setLiveMatches] = useState<Match[]>(() => _homeCache.live);
@@ -227,67 +157,6 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
     }, (err) => { console.error("Carousel fetch error:", err); setBannersLoaded(true); });
     return unsub;
   }, []);
-
-  const newBustTarget = (max: number) =>
-    Math.floor(max * (0.55 + Math.random() * 0.38));
-
-  const randomPhone = () => {
-    const prefixes = ["070", "071", "072", "074", "075", "076", "077", "078"];
-    const p = prefixes[Math.floor(Math.random() * prefixes.length)];
-    const mid = String(Math.floor(Math.random() * 900) + 100);
-    const suffix = String(Math.floor(Math.random() * 900) + 100);
-    return `${p}****${mid}${suffix}`.slice(0, 13);
-  };
-
-  useEffect(() => {
-    const unsub = onSnapshot(doc(db, "settings", "jackpot"), (snap) => {
-      if (snap.exists()) {
-        const d = snap.data();
-        if (d.amount) {
-          setJackpot(d.amount);
-          setBustTarget(newBustTarget(d.amount));
-          setDisplayJackpot(0);
-        }
-        if (d.closesAt) setJackpotSub(d.closesAt);
-      }
-    }, () => {});
-    return unsub;
-  }, []);
-
-  useEffect(() => {
-    if (bustTarget === 0) { setBustTarget(newBustTarget(jackpot)); }
-  }, [jackpot]);
-
-  useEffect(() => {
-    if (isBusting) return;
-    const scheduleNext = () => {
-      const delay = Math.floor(Math.random() * 500) + 250;
-      return setTimeout(() => {
-        setDisplayJackpot((prev) => prev + Math.floor(Math.random() * 150_000) + 50_000);
-        timerId = scheduleNext();
-      }, delay);
-    };
-    let timerId = scheduleNext();
-    return () => clearTimeout(timerId);
-  }, [isBusting]);
-
-  useEffect(() => {
-    if (bustTarget > 0 && displayJackpot >= bustTarget && !isBusting) {
-      setIsBusting(true);
-      setBustFlash(true);
-      const won = displayJackpot;
-      const phone = randomPhone();
-      const announcement = `\u00a0\u00a0\u00a0\u00a0🏆 ${phone} WON UGX ${won.toLocaleString()}! JACKPOT BUSTED!\u00a0\u00a0\u00a0\u00a0`;
-      setWinnerNotice(announcement);
-      setTimeout(() => setBustFlash(false), 2_000);
-      setTimeout(() => {
-        setDisplayJackpot(0);
-        setBustTarget(newBustTarget(jackpot));
-        setIsBusting(false);
-      }, 3_500);
-      setTimeout(() => setWinnerNotice(""), 90_000);
-    }
-  }, [displayJackpot, bustTarget, isBusting, jackpot]);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "settings", "notice"), (snap) => {
@@ -455,7 +324,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
             <span style={{ position: "absolute", top: -5, right: -5, background: "#ef4444", color: "#fff", fontSize: 8, fontWeight: 800, borderRadius: "50%", width: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>{unreadCount > 9 ? "9+" : unreadCount}</span>
           )}
         </div>
-        <div className="notice-scroll">{winnerNotice}{noticeText}</div>
+        <div className="notice-scroll">{noticeText}</div>
       </div>
 
       <div className="quick-nav">
@@ -472,43 +341,7 @@ export default function HomePage({ onAddBet, betSelections, onOpenLogin, onMatch
         })}
       </div>
 
-      <div className="divider-thick" />
 
-      <div className="jackpot-banner" style={bustFlash ? { animation: "jackpotBust 0.35s ease-in-out infinite alternate" } : undefined}>
-        <div className="jackpot-label">
-          <Trophy size={13} />
-          {bustFlash ? "🎉 JACKPOT BUSTED!" : "JACKPOT POOLS"}
-        </div>
-
-        <div className="jackpot-tiers">
-          <div className="jackpot-tier jackpot-tier-gold">
-            <div className="jackpot-tier-name">🏆 MEGA</div>
-            <div className="jackpot-tier-ugx">UGX</div>
-            <TierCounter value={displayJackpot} tier="gold" fontSize={16} />
-          </div>
-          <div className="jackpot-tier jackpot-tier-silver">
-            <div className="jackpot-tier-name">🥈 MAJOR</div>
-            <div className="jackpot-tier-ugx">UGX</div>
-            <TierCounter value={Math.floor(displayJackpot * 0.27)} tier="silver" fontSize={16} />
-          </div>
-          <div className="jackpot-tier jackpot-tier-bronze">
-            <div className="jackpot-tier-name">🥉 MINI</div>
-            <div className="jackpot-tier-ugx">UGX</div>
-            <TierCounter value={Math.floor(displayJackpot * 0.07)} tier="bronze" fontSize={16} />
-          </div>
-        </div>
-
-        <div className="jackpot-footer">
-          <div className="jackpot-sub">
-            {bustFlash
-              ? "A lucky player just won! 🏆"
-              : bustTarget > 0 && displayJackpot > bustTarget * 0.8
-                ? "⚡ BUSTING SOON — Play Now!"
-                : jackpotSub}
-          </div>
-          <button className="jackpot-btn" onClick={onOpenLogin}><Play size={13} fill="currentColor" /> PLAY</button>
-        </div>
-      </div>
 
       {loading && <SkeletonHome />}
 
