@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, X, CheckCircle, Zap, Gift, ChevronRight, AlertCircle, Loader, Ticket, Ban, Search, Clock, CircleDot } from "lucide-react";
+import { FileText, X, CheckCircle, Zap, Gift, ChevronRight, AlertCircle, Loader, Ticket, Ban, Search, Clock, Shield } from "lucide-react";
 import { addDoc, collection, serverTimestamp, updateDoc, doc, increment, query, where, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
@@ -427,72 +427,6 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
               </div>
             )}
 
-            {ticketResult && (() => {
-              const st = ticketResult.status;
-              const statusColor = st === "won" ? "#2DA962" : st === "lost" ? "#ef4444" : st === "cashout" ? "#f59e0b" : "#888";
-              const statusBg = st === "won" ? "rgba(45,169,98,0.1)" : st === "lost" ? "rgba(239,68,68,0.08)" : st === "cashout" ? "rgba(245,158,11,0.1)" : "rgba(0,0,0,0.04)";
-              const StatusIcon = st === "won" ? CheckCircle : st === "lost" ? X : Clock;
-              return (
-                <div style={{ border: `1.5px solid ${statusColor}30`, borderRadius: 12, overflow: "hidden" }}>
-                  {/* Status header */}
-                  <div style={{ background: statusBg, padding: "10px 13px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                      <StatusIcon size={16} color={statusColor} />
-                      <span style={{ fontWeight: 800, fontSize: c.titleSize, color: statusColor, fontFamily: "Oswald, sans-serif", letterSpacing: 0.5 }}>
-                        {st.toUpperCase()}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: c.summarySize - 1, color: "var(--text-muted)" }}>{ticketResult.type} · {ticketResult.selectionsCount} sel</span>
-                  </div>
-                  {/* Details */}
-                  <div style={{ padding: "10px 13px", display: "flex", flexDirection: "column", gap: 5 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: c.summarySize }}>
-                      <span style={{ color: "var(--text-muted)" }}>Ticket ID</span>
-                      <span style={{ fontWeight: 700, fontFamily: "monospace", fontSize: c.summarySize - 1 }}>{ticketResult.ticketId}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: c.summarySize }}>
-                      <span style={{ color: "var(--text-muted)" }}>Stake</span>
-                      <span style={{ fontWeight: 700 }}>UGX {(ticketResult.stake || 0).toLocaleString()}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: c.summarySize }}>
-                      <span style={{ color: "var(--text-muted)" }}>Total Odds</span>
-                      <span style={{ fontWeight: 700, color: "var(--green)" }}>{(ticketResult.totalOdds || 0).toFixed(2)}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: c.summarySize }}>
-                      <span style={{ color: "var(--text-muted)" }}>Possible Win</span>
-                      <span style={{ fontWeight: 800, color: statusColor }}>UGX {(ticketResult.potentialWin || 0).toLocaleString()}</span>
-                    </div>
-                    {ticketResult.date && (
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: c.summarySize }}>
-                        <span style={{ color: "var(--text-muted)" }}>Placed</span>
-                        <span>{ticketResult.date}</span>
-                      </div>
-                    )}
-                    {/* Selections */}
-                    {ticketResult.selections && ticketResult.selections.length > 0 && (
-                      <div style={{ marginTop: 6, borderTop: "1px solid var(--border)", paddingTop: 8, display: "flex", flexDirection: "column", gap: 5 }}>
-                        {ticketResult.selections.map((sel, i) => {
-                          const sc = sel.status === "won" ? "#2DA962" : sel.status === "lost" ? "#ef4444" : "#888";
-                          return (
-                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 0", borderBottom: i < ticketResult.selections.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                              <CircleDot size={9} color={sc} style={{ flexShrink: 0 }} />
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: c.summarySize - 1, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sel.match}</div>
-                                <div style={{ fontSize: c.summarySize, fontWeight: 700, color: "#111" }}>{sel.pick}</div>
-                              </div>
-                              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
-                                <span style={{ fontSize: c.summarySize, fontWeight: 700, color: "var(--green)" }}>{sel.odd?.toFixed(2)}</span>
-                                <span style={{ fontSize: c.summarySize - 2, fontWeight: 700, color: sc }}>{sel.status}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
           </div>
         )}
 
@@ -680,6 +614,123 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
           )}
         </div>
       </div>
+
+      {/* Floating ticket result overlay — same split-panel design as My Bets */}
+      {ticketResult && (() => {
+        const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
+          won:        { label: "WON",        color: "#fff",    bg: "#1a8a4c" },
+          lost:       { label: "LOST",       color: "#fff",    bg: "#c62828" },
+          pending:    { label: "PENDING",    color: "#1a1a2e", bg: "#f59e0b" },
+          cashed_out: { label: "CASHED OUT", color: "#fff",    bg: "#1565c0" },
+        };
+        const sm = STATUS_META[ticketResult.status] ?? STATUS_META.pending;
+        const winAmount = ticketResult.potentialWin || 0;
+        const winLabel = ticketResult.status === "won" ? "PAYOUT" : "POSSIBLE WIN";
+
+        return (
+          <div
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+            onClick={() => setTicketResult(null)}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{ width: "100%", maxWidth: 700, maxHeight: "90vh", background: "#1e2433", borderRadius: 10, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,0.6)" }}
+            >
+              {/* Header */}
+              <div style={{ background: "#1a6e3d", padding: "11px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Shield size={13} style={{ color: "rgba(255,255,255,0.8)" }} />
+                  <span style={{ color: "#fff", fontWeight: 900, fontFamily: "Oswald, sans-serif", fontSize: 13, letterSpacing: 1 }}>
+                    {(ticketResult.type || "PREMATCH").toUpperCase()} | {ticketResult.selectionsCount} EVENT{ticketResult.selectionsCount !== 1 ? "S" : ""}
+                  </span>
+                </div>
+                <button onClick={() => setTicketResult(null)} style={{ background: "rgba(0,0,0,0.25)", border: "none", color: "#fff", cursor: "pointer", borderRadius: 6, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
+
+                {/* Left — scrollable selections */}
+                <div style={{ flex: 1, overflowY: "auto", borderRight: "1px solid rgba(255,255,255,0.07)" }}>
+                  {ticketResult.selections && ticketResult.selections.length > 0 ? ticketResult.selections.map((sel, i) => {
+                    const selSm = STATUS_META[sel.status] ?? STATUS_META.pending;
+                    return (
+                      <div key={i} style={{ padding: "10px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 3, alignSelf: "stretch", background: selSm.bg, borderRadius: 2, flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 10, color: "#6b7a99", marginBottom: 3, fontFamily: "Oswald, sans-serif", letterSpacing: 0.3 }}>—</div>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: "#e8eaf0", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sel.match}</div>
+                          <div style={{ fontSize: 11, color: "#9aa0b5" }}>
+                            Full Time Result : <strong style={{ color: "#cdd0db" }}>{sel.pick}</strong>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+                          <span style={{ fontSize: 14, fontWeight: 900, color: "#2DA962", fontFamily: "Oswald, sans-serif" }}>{sel.odd?.toFixed(2)}</span>
+                          <span style={{ fontSize: 9, fontWeight: 800, color: selSm.color, background: selSm.bg, padding: "2px 7px", borderRadius: 4, fontFamily: "Oswald, sans-serif", letterSpacing: 0.6 }}>{selSm.label}</span>
+                        </div>
+                      </div>
+                    );
+                  }) : (
+                    <div style={{ padding: "30px 20px", textAlign: "center", color: "#6b7a99", fontSize: 13 }}>No selection details available</div>
+                  )}
+                </div>
+
+                {/* Right — summary panel */}
+                <div style={{ width: 210, flexShrink: 0, display: "flex", flexDirection: "column", background: "#181f2e" }}>
+
+                  {/* Ticket ID visual */}
+                  <div style={{ background: "#111622", borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "12px 14px 8px", textAlign: "center" }}>
+                    <div style={{ display: "flex", justifyContent: "center", gap: 1, marginBottom: 6 }}>
+                      {Array.from({ length: 28 }, (_, i) => (
+                        <div key={i} style={{ width: i % 3 === 0 ? 3 : i % 2 === 0 ? 2 : 1, height: 36, background: i % 5 === 0 ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.55)", borderRadius: 1 }} />
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: "monospace" }}>#{ticketResult.ticketId.slice(-10)}</div>
+                  </div>
+
+                  {/* Status */}
+                  <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 10, color: "#6b7a99", fontWeight: 700, fontFamily: "Oswald, sans-serif", letterSpacing: 0.5 }}>STATUS:</span>
+                    <span style={{ fontSize: 11, fontWeight: 900, color: sm.color, background: sm.bg, padding: "4px 12px", borderRadius: 5, fontFamily: "Oswald, sans-serif", letterSpacing: 0.8 }}>{sm.label}</span>
+                  </div>
+
+                  {/* Stats */}
+                  <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: 0, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                    {[
+                      { label: "TOTAL ODDS", value: (ticketResult.totalOdds || 0).toFixed(2), color: "#2DA962" },
+                      { label: "STAKE",       value: `${(ticketResult.stake || 0).toLocaleString()} UGX`, color: "#e8eaf0" },
+                      { label: winLabel,      value: `${winAmount.toLocaleString()} UGX`, color: ticketResult.status === "won" ? "#2DA962" : ticketResult.status === "lost" ? "#ef4444" : "#e8eaf0" },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                        <span style={{ fontSize: 10, color: "#6b7a99", fontWeight: 700, fontFamily: "Oswald, sans-serif", letterSpacing: 0.3 }}>{label}</span>
+                        <span style={{ fontSize: 13, fontWeight: 900, color, fontFamily: "Oswald, sans-serif" }}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {ticketResult.date && (
+                    <div style={{ padding: "8px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                      <div style={{ fontSize: 9, color: "#6b7a99", fontWeight: 600 }}>{ticketResult.date}</div>
+                    </div>
+                  )}
+
+                  {/* Close */}
+                  <div style={{ padding: "12px", marginTop: "auto" }}>
+                    <button
+                      onClick={() => setTicketResult(null)}
+                      style={{ width: "100%", background: "rgba(255,255,255,0.07)", color: "#9aa0b5", fontFamily: "Oswald, sans-serif", fontWeight: 700, fontSize: 11, padding: "9px 0", borderRadius: 7, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", letterSpacing: 0.5 }}
+                    >
+                      CLOSE
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }
