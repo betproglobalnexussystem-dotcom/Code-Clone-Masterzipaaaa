@@ -8,7 +8,6 @@ import SportPage from "./pages/SportPage";
 import ResultsPage from "./pages/ResultsPage";
 import PromotionsPage from "./pages/PromotionsPage";
 import ProfilePage from "./pages/ProfilePage";
-import CasinoPage from "./pages/CasinoPage";
 import MatchDetailsPage from "./pages/MatchDetailsPage";
 import LoginModal from "./components/LoginModal";
 import BetSlip from "./components/BetSlip";
@@ -119,8 +118,6 @@ function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {
         return <ProfilePage onOpenLogin={openLogin} onOpenRegister={openRegister} onOpenAdmin={onOpenAdmin} />;
       case "notifications":
         return <NotificationsPage onBack={() => navigateTo("home")} />;
-      case "slots":
-        return <CasinoPage />;
       default:
         return (
           <HomePage

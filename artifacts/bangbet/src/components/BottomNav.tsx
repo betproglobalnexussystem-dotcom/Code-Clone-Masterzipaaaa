@@ -1,4 +1,4 @@
-import { Trophy, Radio, FileText, User, Gamepad2 } from "lucide-react";
+import { Trophy, Radio, FileText, User } from "lucide-react";
 import type { Page } from "../App";
 
 interface BottomNavProps {
@@ -38,24 +38,6 @@ export default function BottomNav({ activePage, setActivePage, betCount, onBetSl
           )}
         </div>
         <span className="bottom-nav-center-label">BetSlip</span>
-      </div>
-
-      {/* Casino / Slots */}
-      <div
-        className={`bottom-nav-item ${activePage === "slots" ? "active" : ""}`}
-        onClick={() => setActivePage("slots")}
-        style={{ position: "relative" }}
-      >
-        <Gamepad2 size={20} />
-        <span className="bottom-nav-label">Casino</span>
-        {activePage !== "slots" && (
-          <span style={{
-            position: "absolute", top: 4, right: "50%", transform: "translateX(12px)",
-            background: "var(--green)", color: "#fff",
-            fontSize: 7, fontWeight: 800, padding: "1px 4px", borderRadius: 6,
-            fontFamily: "Oswald, sans-serif", lineHeight: 1.4,
-          }}>NEW</span>
-        )}
       </div>
 
       {/* Me */}

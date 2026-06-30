@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trophy, Radio, ClipboardList, Tag, User, Home, Gamepad2, ChevronDown, ChevronUp, Globe } from "lucide-react";
+import { Trophy, Radio, ClipboardList, Tag, User, Home, ChevronDown, ChevronUp, Globe } from "lucide-react";
 import type { Page } from "../App";
 import { getLeagueFlagUrl, SPORTS } from "../lib/api";
 
@@ -17,7 +17,6 @@ const NAV_ITEMS: { page: Page; label: string; icon: React.ElementType; accent?: 
   { page: "home",        label: "Home",       icon: Home },
   { page: "sport",       label: "Sports",     icon: Trophy },
   { page: "live",        label: "Live",       icon: Radio,      accent: "#e53935" },
-  { page: "slots",       label: "Casino",     icon: Gamepad2,   badge: "NEW" },
   { page: "results",     label: "Results",    icon: ClipboardList },
   { page: "promotions",  label: "Promotions", icon: Tag },
   { page: "profile",     label: "My Account", icon: User },
