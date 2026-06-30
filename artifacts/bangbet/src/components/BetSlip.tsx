@@ -78,23 +78,44 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
     setTicketResult(null);
     setTicketLoading(true);
     try {
-      // Try exact ticketId match first
-      const q = query(collection(db, "bets"), where("ticketId", "==", id));
-      const snap = await getDocs(q);
-      if (!snap.empty) {
-        const d = snap.docs[0].data() as TicketResult;
-        setTicketResult({ ...d, ticketId: id });
-      } else {
-        // Also try with string conversion (in case stored as number)
-        const q2 = query(collection(db, "bets"), where("ticketId", "==", Number(id)));
-        const snap2 = await getDocs(q2);
-        if (!snap2.empty) {
-          const d = snap2.docs[0].data() as TicketResult;
-          setTicketResult({ ...d, ticketId: id });
-        } else {
-          setTicketError("No ticket found with that ID. Your ticket ID can be found in My Account → My Bets.");
+      // 1. Try exact full ticketId match
+      const q1 = query(collection(db, "bets"), where("ticketId", "==", id));
+      const snap1 = await getDocs(q1);
+      if (!snap1.empty) {
+        const d = snap1.docs[0].data() as TicketResult;
+        setTicketResult({ ...d, ticketId: d.ticketId ?? id });
+        setTicketLoading(false);
+        return;
+      }
+
+      // 2. Try shortTicketId match (new bets store the last-10-char short ID)
+      const q2 = query(collection(db, "bets"), where("shortTicketId", "==", id));
+      const snap2 = await getDocs(q2);
+      if (!snap2.empty) {
+        const d = snap2.docs[0].data() as TicketResult;
+        setTicketResult({ ...d, ticketId: d.ticketId ?? id });
+        setTicketLoading(false);
+        return;
+      }
+
+      // 3. Fallback: if user is logged in, scan their bets and match by last-10-char suffix
+      //    (covers older bets that don't have shortTicketId stored)
+      if (user?.uid) {
+        const q3 = query(collection(db, "bets"), where("userId", "==", user.uid));
+        const snap3 = await getDocs(q3);
+        const match = snap3.docs.find(doc => {
+          const data = doc.data();
+          return (data.ticketId as string)?.slice(-10) === id;
+        });
+        if (match) {
+          const d = match.data() as TicketResult;
+          setTicketResult({ ...d, ticketId: d.ticketId ?? id });
+          setTicketLoading(false);
+          return;
         }
       }
+
+      setTicketError("No ticket found with that ID. Your ticket ID can be found in My Account → My Bets.");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("permission") || msg.includes("Missing or insufficient")) {
@@ -145,6 +166,7 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
         userName: user.name,
         userPhone: user.phone,
         ticketId,
+        shortTicketId: ticketId.slice(-10),
         stake: stakeNum,
         totalOdds: parseFloat(totalOdds.toFixed(2)),
         potentialWin: Math.round(potential),
@@ -224,6 +246,7 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
         userName: user.name,
         userPhone: user.phone,
         ticketId,
+        shortTicketId: ticketId.slice(-10),
         stake: FREE_BET_AMOUNT,
         totalOdds: parseFloat(totalOdds.toFixed(2)),
         potentialWin: freeBetPotential,
