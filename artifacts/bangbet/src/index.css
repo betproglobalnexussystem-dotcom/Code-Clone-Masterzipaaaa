@@ -2009,13 +2009,10 @@ input, select, textarea { font-family: inherit; outline: none; }
     border-top: 1px solid var(--border);
   }
 
-  /* Center and constrain the main content on wide screens */
-  .desktop-body {
-    justify-content: center;
-  }
-
+  /* Main content fills all remaining space between sidebars */
   .main-content {
-    max-width: 860px;
+    flex: 1;
+    max-width: none;
   }
 
   /* Sport page — sidebar takes over filtering on desktop */
