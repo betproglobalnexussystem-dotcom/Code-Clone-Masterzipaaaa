@@ -84,19 +84,33 @@ function estimateSelectionOdds(sel: BetSelection): number {
 
 function estimateLiveCashout(ticket: Ticket, tick = 0): number {
   if (ticket.status !== "pending") return 0;
-  let ratio = 1;
+
+  let currentTotalOdds = 1;
   let hasLive = false;
+  let clearlyLosing = false;
+
   for (const sel of ticket.selections) {
-    if (sel.status === "lost") return 0;
+    if (sel.status === "lost") return Math.round(ticket.stake * 0.01);
     if (sel.status === "won") continue;
+
     const currentOdd = estimateSelectionOdds(sel);
-    ratio *= currentOdd / sel.odd;
-    if (isMatchLive(sel.time)) hasLive = true;
+    if (currentOdd >= 8000) return Math.round(ticket.stake * 0.01);
+
+    if (isMatchLive(sel.time)) {
+      hasLive = true;
+      if (currentOdd > sel.odd * 2.8) clearlyLosing = true;
+    }
+
+    currentTotalOdds *= currentOdd;
   }
-  const raw = ticket.stake * ratio * 0.85;
+
+  if (clearlyLosing) return Math.round(ticket.stake * 0.01);
+
+  const winProb = 1 / Math.max(currentTotalOdds, 0.01);
+  const raw = ticket.potentialWin * winProb * 0.85;
   const flutter = hasLive ? (Math.sin(tick * 0.71) * 0.035 + Math.cos(tick * 1.37) * 0.025) : 0;
   const adjusted = raw * (1 + flutter);
-  const floor = ticket.stake * 0.02;
+  const floor = ticket.stake * 0.01;
   const ceiling = ticket.potentialWin * 0.95;
   return Math.round(Math.min(Math.max(adjusted, floor), ceiling));
 }

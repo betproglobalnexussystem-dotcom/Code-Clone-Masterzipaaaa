@@ -454,7 +454,7 @@ export function parseBetMap(betMap: BetMap): ParsedMarket[] {
           const knownLabel = def?.ttLabels[s.tt];
           s.label = knownLabel
             ? `${knownLabel}${displaySv ? ` ${displaySv}` : ""}`
-            : displaySv || `Pick ${s.tt}`;
+            : displaySv;
           allSels.push(s);
         });
       });
@@ -466,11 +466,9 @@ export function parseBetMap(betMap: BetMap): ParsedMarket[] {
         return a.tt - b.tt;
       });
 
-      if (!def) {
-        allSels.forEach((s, i) => {
-          if (!s.label) s.label = positionLabel(i, allSels.length, s.tt);
-        });
-      }
+      allSels.forEach((s, i) => {
+        if (!s.label) s.label = positionLabel(i, allSels.length, s.tt);
+      });
 
       markets.push({
         bc,

@@ -235,7 +235,7 @@ export default function ClientSettlement() {
     if (!user?.uid) return;
     const uid = user.uid;
     runCycle(uid);
-    const interval = setInterval(() => runCycle(uid), 30_000);
+    const interval = setInterval(() => runCycle(uid), 15_000);
     return () => { clearInterval(interval); runningRef.current = false; };
   }, [user?.uid]);
 
