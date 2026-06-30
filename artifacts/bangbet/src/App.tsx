@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { COUNTRIES } from "./lib/countries";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
@@ -31,7 +32,36 @@ export interface BetSelection {
   marketKey?: string;
 }
 
+function useCountryDetection() {
+  useEffect(() => {
+    const seg = window.location.pathname.replace(/^\//, "").toLowerCase();
+    if (seg.length === 2 && COUNTRIES.find((c) => c.code.toLowerCase() === seg)) return;
+    fetch("https://api.country.is", { signal: AbortSignal.timeout(4000) })
+      .then((r) => r.json())
+      .then((d) => {
+        const code = (d?.country as string)?.toUpperCase();
+        if (code && COUNTRIES.find((c) => c.code === code)) {
+          const path = "/" + code.toLowerCase();
+          if (window.location.pathname !== path) window.history.replaceState({}, "", path);
+        }
+      })
+      .catch(() => {
+        fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(4000) })
+          .then((r) => r.json())
+          .then((d) => {
+            const code = (d?.country_code as string)?.toUpperCase();
+            if (code && COUNTRIES.find((c) => c.code === code)) {
+              const path = "/" + code.toLowerCase();
+              if (window.location.pathname !== path) window.history.replaceState({}, "", path);
+            }
+          })
+          .catch(() => {});
+      });
+  }, []);
+}
+
 function AppInner({ onOpenAdmin }: { onOpenAdmin: () => void }) {
+  useCountryDetection();
   const { user } = useAuth();
   const [activePage, setActivePage] = useState<Page>("home");
   const [showLogin, setShowLogin] = useState(false);

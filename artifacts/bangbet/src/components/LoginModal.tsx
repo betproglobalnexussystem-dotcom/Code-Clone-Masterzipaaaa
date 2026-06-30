@@ -138,37 +138,50 @@ function CountryPhoneInput({ country, phone, onCountryChange, onPhoneChange, onE
   );
 }
 
-// ── Detect country from browser locale / timezone ──────────────────────────
-function detectCountry(): Country {
+// ── IP-based country detection ───────────────────────────────────────────────
+async function detectCountryByIP(): Promise<Country> {
   try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const tzMap: Record<string, string> = {
-      "Africa/Kampala": "UG", "Africa/Nairobi": "KE", "Africa/Dar_es_Salaam": "TZ",
-      "Africa/Kigali": "RW", "Africa/Addis_Ababa": "ET", "Africa/Lagos": "NG",
-      "Africa/Accra": "GH", "Africa/Johannesburg": "ZA", "Africa/Lusaka": "ZM",
-      "Africa/Harare": "ZW", "Africa/Blantyre": "MW", "Africa/Maputo": "MZ",
-      "Africa/Kinshasa": "CD", "Africa/Douala": "CM", "Africa/Dakar": "SN",
-      "Africa/Abidjan": "CI", "Africa/Cairo": "EG", "Africa/Casablanca": "MA",
-      "Europe/London": "GB", "America/New_York": "US", "America/Chicago": "US",
-      "America/Los_Angeles": "US", "Asia/Kolkata": "IN", "Asia/Shanghai": "CN",
-      "Europe/Berlin": "DE", "Europe/Paris": "FR", "America/Toronto": "CA",
-      "Australia/Sydney": "AU", "America/Sao_Paulo": "BR", "Europe/Lisbon": "PT",
-      "Europe/Madrid": "ES", "Europe/Rome": "IT",
-    };
-    const code = tzMap[tz];
-    if (code) {
-      const found = COUNTRIES.find(c => c.code === code);
-      if (found) return found;
+    const res = await fetch("https://api.country.is", { signal: AbortSignal.timeout(4000) });
+    if (res.ok) {
+      const data = await res.json();
+      const code = (data?.country as string)?.toUpperCase();
+      if (code) {
+        const found = COUNTRIES.find((c) => c.code === code);
+        if (found) return found;
+      }
     }
-    // Fallback: try navigator.language (e.g. "sw-UG" → "UG")
-    const lang = navigator.language || "";
-    const langCode = lang.split("-")[1]?.toUpperCase();
-    if (langCode) {
-      const found = COUNTRIES.find(c => c.code === langCode);
-      if (found) return found;
+  } catch {}
+  // Second fallback: ipapi.co
+  try {
+    const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(4000) });
+    if (res.ok) {
+      const data = await res.json();
+      const code = (data?.country_code as string)?.toUpperCase();
+      if (code) {
+        const found = COUNTRIES.find((c) => c.code === code);
+        if (found) return found;
+      }
     }
   } catch {}
   return DEFAULT_COUNTRY;
+}
+
+/** Push/replace the URL path to match the country, e.g. /ug */
+function setCountryPath(code: string) {
+  const path = "/" + code.toLowerCase();
+  if (window.location.pathname !== path) {
+    window.history.replaceState({}, "", path);
+  }
+}
+
+/** Read URL path → country on first load, e.g. /ug → Uganda */
+function getCountryFromPath(): Country | null {
+  const seg = window.location.pathname.replace(/^\//, "").toLowerCase();
+  if (seg.length === 2) {
+    const found = COUNTRIES.find((c) => c.code.toLowerCase() === seg);
+    if (found) return found;
+  }
+  return null;
 }
 
 // ── Main Modal ─────────────────────────────────────────────────────────────
@@ -177,11 +190,24 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
   const [view, setView] = useState<View>(mode);
 
   // Shared country (auto-detected, used across login / register / google-prompt)
-  const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY);
+  const [country, setCountry] = useState<Country>(() => getCountryFromPath() ?? DEFAULT_COUNTRY);
 
   useEffect(() => {
-    setCountry(detectCountry());
+    const fromPath = getCountryFromPath();
+    if (fromPath) {
+      setCountry(fromPath);
+      return;
+    }
+    detectCountryByIP().then((detected) => {
+      setCountry(detected);
+      setCountryPath(detected.code);
+    });
   }, []);
+
+  const handleCountryChange = (c: Country) => {
+    setCountry(c);
+    setCountryPath(c.code);
+  };
 
   // Login fields
   const [phone, setPhone] = useState("");
@@ -323,10 +349,10 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
               <CountryPhoneInput
                 country={country}
                 phone={phone}
-                onCountryChange={setCountry}
+                onCountryChange={handleCountryChange}
                 onPhoneChange={setPhone}
                 onEnter={handleLogin}
-                placeholder="700 000 000"
+                placeholder={country.placeholder}
               />
             </div>
             <div className="form-group">
@@ -384,10 +410,10 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
               <CountryPhoneInput
                 country={country}
                 phone={regPhone}
-                onCountryChange={setCountry}
+                onCountryChange={handleCountryChange}
                 onPhoneChange={setRegPhone}
                 onEnter={handleRegister}
-                placeholder="700 000 000"
+                placeholder={country.placeholder}
                 autoComplete="tel"
               />
             </div>
@@ -470,10 +496,10 @@ export default function LoginModal({ mode, onClose, onSwitchMode }: LoginModalPr
               <CountryPhoneInput
                 country={country}
                 phone={googlePhone}
-                onCountryChange={setCountry}
+                onCountryChange={handleCountryChange}
                 onPhoneChange={setGooglePhone}
                 onEnter={handlePhonePrompt}
-                placeholder="700 000 000"
+                placeholder={country.placeholder}
               />
             </div>
             <button className="btn-primary" onClick={handlePhonePrompt} disabled={loading}
