@@ -153,6 +153,7 @@ export default function LiveChat() {
       {/* Floating bubble */}
       {!open && (
         <button
+          data-livechat-trigger
           onClick={() => setOpen(true)}
           style={{
             position: "fixed", bottom: 72, right: 16, zIndex: 900,

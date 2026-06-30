@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { FileText, X, CheckCircle, Zap, Gift, ChevronRight, AlertCircle, Loader, Ticket, Ban } from "lucide-react";
-import { addDoc, collection, serverTimestamp, updateDoc, doc, increment } from "firebase/firestore";
+import { FileText, X, CheckCircle, Zap, Gift, ChevronRight, AlertCircle, Loader, Ticket, Ban, Search, Clock, CircleDot } from "lucide-react";
+import { addDoc, collection, serverTimestamp, updateDoc, doc, increment, query, where, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import type { BetSelection } from "../App";
@@ -44,13 +44,52 @@ function getFridayKey(): string {
   return `fri-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+interface TicketResult {
+  ticketId: string;
+  status: string;
+  stake: number;
+  totalOdds: number;
+  potentialWin: number;
+  date: string;
+  selectionsCount: number;
+  type: string;
+  selections: { match: string; pick: string; odd: number; status: string }[];
+}
+
 export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, onOpenLogin, inline = false }: BetSlipProps) {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<"slip" | "check">("slip");
+  const [ticketInput, setTicketInput] = useState("");
+  const [ticketResult, setTicketResult] = useState<TicketResult | null>(null);
+  const [ticketError, setTicketError] = useState("");
+  const [ticketLoading, setTicketLoading] = useState(false);
   const [stake, setStake] = useState("3700");
   const [placing, setPlacing] = useState(false);
   const [betError, setBetError] = useState("");
   const [betSuccess, setBetSuccess] = useState(false);
   const [freeBetSuccess, setFreeBetSuccess] = useState(false);
+
+  const checkTicket = async () => {
+    const id = ticketInput.trim();
+    if (!id) return;
+    setTicketError("");
+    setTicketResult(null);
+    setTicketLoading(true);
+    try {
+      const q = query(collection(db, "bets"), where("ticketId", "==", id));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        setTicketError("No ticket found with that ID. Please check and try again.");
+      } else {
+        const d = snap.docs[0].data() as TicketResult;
+        setTicketResult({ ...d, ticketId: id });
+      }
+    } catch {
+      setTicketError("Failed to check ticket. Please try again.");
+    } finally {
+      setTicketLoading(false);
+    }
+  };
 
   const totalOdds = selections.reduce((acc, s) => acc * s.odd, 1);
   const stakeNum = parseFloat(stake) || 0;
@@ -265,24 +304,160 @@ export default function BetSlip({ selections, onRemove, onClose, onBetPlaced, on
       <div className={inline ? "betslip-panel betslip-panel--inline" : "betslip-panel"}>
 
         <div className="betslip-header" style={{ padding: c.headerPad }}>
-          <div className="betslip-title" style={{ fontSize: c.titleSize }}>
-            <FileText size={c.iconSize} />
-            BET SLIP
-            {selections.length > 0 && (
-              <span style={{
-                background: "var(--green)", color: "#fff",
-                fontSize: c.badgeSize, fontWeight: 800, padding: c.badgePad,
-                borderRadius: 12, fontFamily: "Oswald, sans-serif",
-                letterSpacing: 0.3, boxShadow: "0 2px 8px rgba(45,169,98,0.4)",
-              }}>
-                {selections.length}
-              </span>
-            )}
+          <div style={{ display: "flex", flex: 1, gap: 4 }}>
+            <button
+              onClick={() => setActiveTab("slip")}
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                background: activeTab === "slip" ? "var(--green)" : "rgba(45,169,98,0.08)",
+                color: activeTab === "slip" ? "#fff" : "var(--green)",
+                border: `1.5px solid ${activeTab === "slip" ? "var(--green)" : "rgba(45,169,98,0.25)"}`,
+                borderRadius: 8, padding: "5px 10px", fontSize: c.titleSize - 1,
+                fontWeight: 800, cursor: "pointer", fontFamily: "Oswald, sans-serif",
+                transition: "all 0.15s",
+              }}
+            >
+              <FileText size={c.iconSize - 2} />
+              BET SLIP
+              {selections.length > 0 && (
+                <span style={{ background: activeTab === "slip" ? "rgba(255,255,255,0.25)" : "var(--green)", color: "#fff", fontSize: c.badgeSize - 1, fontWeight: 800, padding: "0px 5px", borderRadius: 10 }}>
+                  {selections.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("check")}
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                background: activeTab === "check" ? "#6d28d9" : "rgba(109,40,217,0.08)",
+                color: activeTab === "check" ? "#fff" : "#6d28d9",
+                border: `1.5px solid ${activeTab === "check" ? "#6d28d9" : "rgba(109,40,217,0.25)"}`,
+                borderRadius: 8, padding: "5px 10px", fontSize: c.titleSize - 1,
+                fontWeight: 800, cursor: "pointer", fontFamily: "Oswald, sans-serif",
+                transition: "all 0.15s",
+              }}
+            >
+              <Search size={c.iconSize - 2} />
+              CHECK TICKET
+            </button>
           </div>
           <div className="betslip-close" onClick={onClose}><X size={c.closeSize} /></div>
         </div>
 
-        <div className="betslip-body" style={{ padding: c.bodyPad }}>
+        {/* Ticket Checker Panel */}
+        {activeTab === "check" && (
+          <div style={{ padding: c.bodyPad, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: c.stakeLabel, fontWeight: 700, color: "var(--text-muted)", marginBottom: 6, letterSpacing: 0.4 }}>ENTER TICKET / BET ID</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                <input
+                  value={ticketInput}
+                  onChange={e => { setTicketInput(e.target.value); setTicketResult(null); setTicketError(""); }}
+                  onKeyDown={e => e.key === "Enter" && checkTicket()}
+                  placeholder="e.g. 1751305200123"
+                  style={{
+                    flex: 1, border: "1.5px solid rgba(109,40,217,0.25)", borderRadius: 10,
+                    padding: inline ? "8px 10px" : "10px 13px", fontSize: c.stakeInputSize - 4,
+                    background: "#faf9ff", color: "#111", outline: "none",
+                    fontFamily: "monospace",
+                  }}
+                />
+                <button
+                  onClick={checkTicket}
+                  disabled={!ticketInput.trim() || ticketLoading}
+                  style={{
+                    background: ticketInput.trim() ? "#6d28d9" : "#e0e0e0",
+                    color: "#fff", border: "none", borderRadius: 10,
+                    padding: inline ? "8px 12px" : "10px 14px",
+                    fontSize: c.stakeLabel, fontWeight: 800,
+                    cursor: ticketInput.trim() ? "pointer" : "default",
+                    display: "flex", alignItems: "center", gap: 4,
+                    fontFamily: "Oswald, sans-serif",
+                    transition: "background 0.15s", flexShrink: 0,
+                  }}
+                >
+                  {ticketLoading ? <Loader size={13} style={{ animation: "spin 1s linear infinite" }} /> : <Search size={13} />}
+                  {inline ? "" : "CHECK"}
+                </button>
+              </div>
+            </div>
+
+            {ticketError && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 10, padding: "10px 12px", color: "#ef4444", fontSize: c.summarySize, fontWeight: 600 }}>
+                <AlertCircle size={14} /> {ticketError}
+              </div>
+            )}
+
+            {ticketResult && (() => {
+              const st = ticketResult.status;
+              const statusColor = st === "won" ? "#2DA962" : st === "lost" ? "#ef4444" : st === "cashout" ? "#f59e0b" : "#888";
+              const statusBg = st === "won" ? "rgba(45,169,98,0.1)" : st === "lost" ? "rgba(239,68,68,0.08)" : st === "cashout" ? "rgba(245,158,11,0.1)" : "rgba(0,0,0,0.04)";
+              const StatusIcon = st === "won" ? CheckCircle : st === "lost" ? X : Clock;
+              return (
+                <div style={{ border: `1.5px solid ${statusColor}30`, borderRadius: 12, overflow: "hidden" }}>
+                  {/* Status header */}
+                  <div style={{ background: statusBg, padding: "10px 13px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <StatusIcon size={16} color={statusColor} />
+                      <span style={{ fontWeight: 800, fontSize: c.titleSize, color: statusColor, fontFamily: "Oswald, sans-serif", letterSpacing: 0.5 }}>
+                        {st.toUpperCase()}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: c.summarySize - 1, color: "var(--text-muted)" }}>{ticketResult.type} · {ticketResult.selectionsCount} sel</span>
+                  </div>
+                  {/* Details */}
+                  <div style={{ padding: "10px 13px", display: "flex", flexDirection: "column", gap: 5 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: c.summarySize }}>
+                      <span style={{ color: "var(--text-muted)" }}>Ticket ID</span>
+                      <span style={{ fontWeight: 700, fontFamily: "monospace", fontSize: c.summarySize - 1 }}>{ticketResult.ticketId}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: c.summarySize }}>
+                      <span style={{ color: "var(--text-muted)" }}>Stake</span>
+                      <span style={{ fontWeight: 700 }}>UGX {(ticketResult.stake || 0).toLocaleString()}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: c.summarySize }}>
+                      <span style={{ color: "var(--text-muted)" }}>Total Odds</span>
+                      <span style={{ fontWeight: 700, color: "var(--green)" }}>{(ticketResult.totalOdds || 0).toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: c.summarySize }}>
+                      <span style={{ color: "var(--text-muted)" }}>Possible Win</span>
+                      <span style={{ fontWeight: 800, color: statusColor }}>UGX {(ticketResult.potentialWin || 0).toLocaleString()}</span>
+                    </div>
+                    {ticketResult.date && (
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: c.summarySize }}>
+                        <span style={{ color: "var(--text-muted)" }}>Placed</span>
+                        <span>{ticketResult.date}</span>
+                      </div>
+                    )}
+                    {/* Selections */}
+                    {ticketResult.selections && ticketResult.selections.length > 0 && (
+                      <div style={{ marginTop: 6, borderTop: "1px solid var(--border)", paddingTop: 8, display: "flex", flexDirection: "column", gap: 5 }}>
+                        {ticketResult.selections.map((sel, i) => {
+                          const sc = sel.status === "won" ? "#2DA962" : sel.status === "lost" ? "#ef4444" : "#888";
+                          return (
+                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 0", borderBottom: i < ticketResult.selections.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                              <CircleDot size={9} color={sc} style={{ flexShrink: 0 }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: c.summarySize - 1, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sel.match}</div>
+                                <div style={{ fontSize: c.summarySize, fontWeight: 700, color: "#111" }}>{sel.pick}</div>
+                              </div>
+                              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+                                <span style={{ fontSize: c.summarySize, fontWeight: 700, color: "var(--green)" }}>{sel.odd?.toFixed(2)}</span>
+                                <span style={{ fontSize: c.summarySize - 2, fontWeight: 700, color: sc }}>{sel.status}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        <div className="betslip-body" style={{ padding: c.bodyPad, display: activeTab === "check" ? "none" : undefined }}>
           {selections.length === 0 ? (
             <div className="betslip-empty" style={{ padding: c.emptyPad, fontSize: c.emptySize }}>
               <FileText size={c.emptyIcon} />
